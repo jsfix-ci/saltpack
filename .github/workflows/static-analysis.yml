@@ -4,7 +4,7 @@ on: [ push ]
 
 jobs:
  static-analysis:
-  runs-on: ubuntu
+  runs-on: ubuntu-latest
   steps:
    - uses: actions/checkout@v2
 
