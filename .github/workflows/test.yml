@@ -3,11 +3,11 @@ name: standard tests
 on: [ push ]
 
 jobs:
- strategy:
-  matrix:
-   os: [ ubuntu-latest, mac-latest, win-latest ]
-   node: [ 12, 14 ]
  test:
+  strategy:
+   matrix:
+    os: [ ubuntu-latest, mac-latest, win-latest ]
+    node: [ 12, 14 ]
   runs-on: ${{ matrix.os }}
   steps:
    - uses: actions/checkout@v2
