@@ -10,5 +10,11 @@ jobs:
    - uses: actions/setup-node@v2-beta
      with:
       node-version: '14'
+   - name: Cache node
+     uses: actions/cache@v2
+     with:
+       path: |
+         **/node_modules
+       key: ${{ matrix.os }}-${{ hashFiles('**/package-lock.json') }}
    - run: npm install
    - run: npm run static-analysis
