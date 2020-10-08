@@ -1,16 +1,11 @@
 let
  pkgs = import <nixpkgs> {};
-
- dev = pkgs.writeShellScriptBin "lint" ''
-  yarn run eslint
- '';
 in
 pkgs.stdenv.mkDerivation {
  name = "shell";
  buildInputs = [
+  # deps from upstream
   pkgs.nodejs-14_x
-  pkgs.yarn
-  dev
  ];
 
  shellHook = ''
@@ -18,8 +13,8 @@ pkgs.stdenv.mkDerivation {
   mkdir -p .nix-node
   export NODE_PATH=$PWD/.nix-node
   export NPM_CONFIG_PREFIX=$PWD/.nix-node
-  export PATH=$NODE_PATH/bin:$PATH
+  export PATH=$( npm bin ):$PATH
   # keep it fresh
-  yarn install
+  npm install
  '';
 }
