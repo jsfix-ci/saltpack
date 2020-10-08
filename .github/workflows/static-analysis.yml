@@ -16,5 +16,8 @@ jobs:
        path: |
          **/node_modules
        key: ${{ matrix.os }}-${{ hashFiles('**/package-lock.json') }}
+       restore-keys: |
+        ${{ matrix.os }}-${{matrix.node }}-
+        ${{ matrix.os }}-
    - run: npm install
    - run: npm run static-analysis
