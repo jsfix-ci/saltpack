@@ -18,7 +18,9 @@
     "url": "https://github.com/hummhive/saltpack/issues"
   },
   "homepage": "https://github.com/hummhive/saltpack#readme",
-  "dependencies": {},
+  "dependencies": {
+    "msgpackr": "^0.5.3"
+  },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^9.0.0",
     "@rollup/plugin-typescript": "^6.0.0",

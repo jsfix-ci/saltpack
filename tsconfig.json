@@ -1,4 +1,7 @@
 {
     "extends": "@tsconfig/recommended/tsconfig.json",
-    "exclude": ["dist", "node_modules"]
+    "exclude": ["dist", "node_modules"],
+    "compilerOptions": {
+     "target": "ES2020"
+    }
 }
