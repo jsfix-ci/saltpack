@@ -1,11 +1,11 @@
 import { Mode, value, parse } from './mode'
-import { pack, unpack } from '../messagepack/messagepack'
+import { pack, unpack, MessagepackSerializedData } from '../messagepack/messagepack'
 import 'mocha'
 import { strict as assert } from 'assert'
 
 describe('Mode', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[Mode, number, Array<number>]>) => {
+  const testPackValue = (tests:Array<[Mode, number, MessagepackSerializedData]>) => {
    for (let test of tests) {
     let [version, v, packed] = test
     assert.deepEqual(v, value(version))

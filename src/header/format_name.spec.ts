@@ -1,11 +1,11 @@
 import { FormatName, value, parse } from './format_name'
-import { pack, unpack } from '../messagepack/messagepack'
+import { pack, unpack, MessagepackSerializedData } from '../messagepack/messagepack'
 import 'mocha'
 import { strict as assert } from 'assert'
 
 describe('FormatName', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[FormatName, string, Array<number>]>) => {
+  const testPackValue = (tests:Array<[FormatName, string, MessagepackSerializedData]>) => {
    for (let test of tests) {
     let [version, v, packed] = test
     assert.deepEqual(v, value(version))
