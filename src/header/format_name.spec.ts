@@ -1,21 +1,21 @@
-import { FormatName, value, parse } from './format_name'
+import { FormatName, Value, value, parse } from './format_name'
 import { pack, unpack, MessagepackSerializedData } from '../messagepack/messagepack'
 import 'mocha'
 import { strict as assert } from 'assert'
 
 describe('FormatName', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[FormatName, string, MessagepackSerializedData]>) => {
+  const testPackValue = (tests:Array<[FormatName, Value, MessagepackSerializedData]>) => {
    for (let test of tests) {
-    let [version, v, packed] = test
-    assert.deepEqual(v, value(version))
-    assert.deepEqual(Buffer.from(packed), pack(value(version)))
-    assert.deepEqual(v, unpack(pack(value(version))))
-    assert.deepEqual(version, parse(unpack(pack(value(version)))))
+    let [format_name, v, packed] = test
+    assert.deepEqual(v, value(format_name))
+    assert.deepEqual(Buffer.from(packed), pack(value(format_name)))
+    assert.deepEqual(v, unpack(pack(value(format_name))))
+    assert.deepEqual(format_name, parse(unpack(pack(value(format_name)))))
    }
   }
 
-  it('each version has the correct pack value', () => {
+  it('each FormatName has the correct pack value', () => {
    testPackValue([
     [FormatName.SaltPack, "saltpack", [168, 115, 97, 108, 116, 112, 97, 99, 107]],
    ])

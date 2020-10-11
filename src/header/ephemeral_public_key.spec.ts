@@ -1,11 +1,11 @@
-import { EphemeralPublicKey, value, parse } from './ephemeral_public_key'
+import { EphemeralPublicKey, Value, value, parse } from './ephemeral_public_key'
 import { pack, unpack, MessagepackSerializedData } from '../messagepack/messagepack'
 import 'mocha'
 import { strict as assert } from 'assert'
 
 describe('EphemeralPublicKey', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[EphemeralPublicKey, Uint8Array, MessagepackSerializedData]>) => {
+  const testPackValue = (tests:Array<[EphemeralPublicKey, Value, MessagepackSerializedData]>) => {
    for (let test of tests) {
     let [ephemeral_public_key, v, packed] = test
     assert.deepEqual(v, value(ephemeral_public_key))
@@ -32,13 +32,13 @@ describe('EphemeralPublicKey', () => {
    // the typescript type system but doesn't have the right length
    assert.deepEqual(
     parse(Uint8Array.from([1])),
-    Error('failed to parse an EphemeralPublicKey from: {"0":1}'),
+    Error('failed to parse a EphemeralPublicKey from: {"0":1}'),
    )
 
    // this error happens when a runtime unpack subverts typescript type rails
    assert.deepEqual(
     parse(unpack(Buffer.from([145, 3]))),
-    Error('failed to parse an EphemeralPublicKey from: [3]'),
+    Error('failed to parse a EphemeralPublicKey from: [3]'),
    )
   })
  })

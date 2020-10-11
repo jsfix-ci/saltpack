@@ -1,17 +1,17 @@
-import { Mode, value, parse } from './mode'
+import { Mode, Value, value, parse } from './mode'
 import { pack, unpack, MessagepackSerializedData } from '../messagepack/messagepack'
 import 'mocha'
 import { strict as assert } from 'assert'
 
 describe('Mode', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[Mode, number, MessagepackSerializedData]>) => {
+  const testPackValue = (tests:Array<[Mode, Value, MessagepackSerializedData]>) => {
    for (let test of tests) {
-    let [version, v, packed] = test
-    assert.deepEqual(v, value(version))
-    assert.deepEqual(Buffer.from(packed), pack(value(version)))
-    assert.deepEqual(v, unpack(pack(value(version))))
-    assert.deepEqual(version, parse(unpack(pack(value(version)))))
+    let [mode, v, packed] = test
+    assert.deepEqual(v, value(mode))
+    assert.deepEqual(Buffer.from(packed), pack(value(mode)))
+    assert.deepEqual(v, unpack(pack(value(mode))))
+    assert.deepEqual(mode, parse(unpack(pack(value(mode)))))
    }
   }
 
