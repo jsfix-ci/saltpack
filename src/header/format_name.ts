@@ -1,21 +1,25 @@
 import { parse as mpParse } from '../messagepack/parse'
 
-export type Value = string
+export namespace FormatName {
+ const name:string = 'FormatName'
+ export type Portable = string
+ export enum Value {
+  SaltPack = "saltpack"
+ }
 
-// > The format name is the string "saltpack".
-export enum FormatName {
- SaltPack = "saltpack"
-}
+ export function toPortable(value:Value):Portable {
+  return Value.SaltPack
+ }
 
-export function value(formatName:FormatName):Value {
- return FormatName.SaltPack
-}
+ function guardPortable(portable:Portable):boolean {
+  return portable === Value.SaltPack
+ }
 
-export function parse(value:Value):FormatName|Error {
- return mpParse(
-  (value:Value) => { return value === FormatName.SaltPack },
-  (value:Value) => { return FormatName.SaltPack },
-  value,
-  'FormatName',
- )
+ function fromPortableUnsafe(portable:Portable):FormatName.Value|void {
+  return Value.SaltPack
+ }
+
+ export function fromPortable(portable:Portable):FormatName.Value|Error {
+  return mpParse(guardPortable, fromPortableUnsafe, portable, name)
+ }
 }

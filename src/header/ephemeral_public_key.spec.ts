@@ -1,17 +1,17 @@
-import { EphemeralPublicKey, Value, value, parse } from './ephemeral_public_key'
+import { EphemeralPublicKey } from './ephemeral_public_key'
 import { pack, unpack, MessagepackSerializedData } from '../messagepack/messagepack'
 import 'mocha'
 import { strict as assert } from 'assert'
 
 describe('EphemeralPublicKey', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[EphemeralPublicKey, Value, MessagepackSerializedData]>) => {
+  const testPackValue = (tests:Array<[EphemeralPublicKey.Value, EphemeralPublicKey.Portable, MessagepackSerializedData]>) => {
    for (let test of tests) {
-    let [ephemeral_public_key, v, packed] = test
-    assert.deepEqual(v, value(ephemeral_public_key))
-    assert.deepEqual(Buffer.from(packed), pack(value(ephemeral_public_key)))
-    assert.deepEqual(Buffer.from(v), unpack(pack(value(ephemeral_public_key))))
-    assert.deepEqual(ephemeral_public_key, parse(unpack(pack(value(ephemeral_public_key)))))
+    let [value, portable, packed] = test
+    assert.deepEqual(portable, EphemeralPublicKey.toPortable(value))
+    assert.deepEqual(Buffer.from(packed), pack(EphemeralPublicKey.toPortable(value)))
+    assert.deepEqual(Buffer.from(portable), unpack(pack(EphemeralPublicKey.toPortable(value))))
+    assert.deepEqual(value, EphemeralPublicKey.fromPortable(unpack(pack(EphemeralPublicKey.toPortable(value)))))
    }
   }
 
@@ -31,13 +31,13 @@ describe('EphemeralPublicKey', () => {
    // this error happens when a runtime value is structurally sound according to
    // the typescript type system but doesn't have the right length
    assert.deepEqual(
-    parse(Uint8Array.from([1])),
+    EphemeralPublicKey.fromPortable(Uint8Array.from([1])),
     Error('failed to parse a EphemeralPublicKey from: {"0":1}'),
    )
 
    // this error happens when a runtime unpack subverts typescript type rails
    assert.deepEqual(
-    parse(unpack(Buffer.from([145, 3]))),
+    EphemeralPublicKey.fromPortable(unpack(Buffer.from([145, 3]))),
     Error('failed to parse a EphemeralPublicKey from: [3]'),
    )
   })

@@ -1,30 +1,33 @@
 import { parse as mpParse } from '../messagepack/parse'
 
-export type Value = number
+export namespace Mode {
+ const name:string = 'Mode'
+ export type Portable = number
+ export enum Value {
+  Encryption = 0,
+  AttachedSigning = 1,
+  DetachedSigning = 2,
+  Signcryption = 3,
+ }
 
-export enum Mode {
- Encryption = 0,
- AttachedSigning = 1,
- DetachedSigning = 2,
- Signcryption = 3,
-}
+ export function toPortable(value:Value):Portable {
+  return value
+ }
 
-export function value(mode:Mode):Value {
- return mode
-}
+ function guardPortable(portable:Portable):boolean {
+  return ( 0 <= portable ) && ( portable <= 3 )
+ }
 
-export function parse(value:Value):Mode|Error {
- return mpParse(
-  (value:Value) => { return ( 0 <= value ) && ( value <= 3 ) },
-  (value:Value) => {
-   switch (value) {
-    case 0: return Mode.Encryption
-    case 1: return Mode.AttachedSigning
-    case 2: return Mode.DetachedSigning
-    case 3: return Mode.Signcryption
-   }
-  },
-  value,
-  'Mode',
- )
+ function fromPortableUnsafe(portable:Portable):Mode.Value|void {
+  switch (portable) {
+   case 0: return Value.Encryption
+   case 1: return Value.AttachedSigning
+   case 2: return Value.DetachedSigning
+   case 3: return Value.Signcryption
+  }
+ }
+
+ export function fromPortable(portable:Portable):Mode.Value|Error {
+  return mpParse(guardPortable, fromPortableUnsafe, portable, name)
+ }
 }

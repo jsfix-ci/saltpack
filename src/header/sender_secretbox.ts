@@ -1,20 +1,27 @@
 import { parse as mpParse } from '../messagepack/parse'
 
-export type Value = Uint8Array
+export namespace SenderSecretBox {
+ const name:string = 'SenderSecretBox'
+ export type Portable = Uint8Array
+ export interface Value {
+  secretBox: Portable
+ }
 
-export interface SenderSecretBox {
- secretBox: Value
-}
+ export function toPortable(value:Value):Portable {
+  return value.secretBox
+ }
 
-export function value(senderSecretBox:SenderSecretBox):Value {
- return senderSecretBox.secretBox
-}
+ function guardPortable(portable:Portable):boolean {
+  // the Uint8Array is represented as a Buffer by messagepack round tripping so
+  // we have to fit that to our Uint8Array model
+  return portable.constructor === Buffer
+ }
 
-export function parse(value:Value):SenderSecretBox|Error {
- return mpParse(
-  (value:Value) => { return value.constructor === Buffer },
-  (value:Value) => { return { secretBox: Uint8Array.from(value) } },
-  value,
-  'SenderSecretBox',
- )
+ function fromPortableUnsafe(portable:Portable):SenderSecretBox.Value|void {
+  return { secretBox: Uint8Array.from(portable) }
+ }
+
+ export function fromPortable(portable:Portable):SenderSecretBox.Value|Error {
+  return mpParse(guardPortable, fromPortableUnsafe, portable, name)
+ }
 }
