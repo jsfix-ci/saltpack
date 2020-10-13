@@ -2,6 +2,7 @@ import { parse as mpParse } from '../messagepack/parse'
 
 export namespace FormatName {
  const name:string = 'FormatName'
+ // > The format name is the string "saltpack".
  export type Portable = string
  export enum Value {
   SaltPack = "saltpack"

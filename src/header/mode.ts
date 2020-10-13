@@ -2,6 +2,8 @@ import { parse as mpParse } from '../messagepack/parse'
 
 export namespace Mode {
  const name:string = 'Mode'
+ // > The mode is the number 0, for encryption, encoded as a positive fixnum.
+ // > (1 and 2 are attached and detached signing, and 3 is signcryption.)
  export type Portable = number
  export enum Value {
   Encryption = 0,

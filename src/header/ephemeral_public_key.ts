@@ -2,6 +2,9 @@ import { parse as mpParse } from '../messagepack/parse'
 
 export namespace EphemeralPublicKey {
  const name:string = 'EphemeralPublicKey'
+ // > The ephemeral public key is a NaCl public encryption key, 32 bytes. The
+ // > ephemeral keypair is generated at random by the sender and only used for
+ // > one message.
  export type Portable = Uint8Array
  export interface Value {
   key: Portable

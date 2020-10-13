@@ -2,6 +2,8 @@ import { parse as mpParse } from '../messagepack/parse'
 
 export namespace SenderSecretBox {
  const name:string = 'SenderSecretBox'
+ // > The sender secretbox is a crypto_secretbox containing the sender's
+ // > long-term public key, encrypted with the payload key from below.
  export type Portable = Uint8Array
  export interface Value {
   secretBox: Portable

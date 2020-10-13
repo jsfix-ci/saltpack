@@ -1,8 +1,9 @@
 import { parse as mpParse } from '../messagepack/parse'
 
-// > The version is a list of the major and minor versions, currently [2, 0], both encoded as positive fixnums.
 export namespace Version {
  const name:string = 'Version'
+ // > The version is a list of the major and minor versions, currently [2, 0],
+ // > both encoded as positive fixnums.
  export type Portable = [ number, number ]
  export enum Value {
   One,
