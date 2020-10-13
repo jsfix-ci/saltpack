@@ -1,3 +1,4 @@
+// > The format name is the string "saltpack".
 export class FormatName {
  private value: FormatName.Value
  constructor(value:FormatName.Value) {
@@ -11,12 +12,12 @@ export class FormatName {
 
 export namespace FormatName {
  export type Encoded = string
- export enum Value {
+ export const enum Value {
   SaltPack = "saltpack"
  }
 
  export function decode(encoded:Encoded):FormatName|Error {
-  if ( Value.SaltPack[encoded] ) {
+  if ( Value.SaltPack === encoded ) {
    return new FormatName(Value.SaltPack)
   }
   return Error(FormatName.name + ' failed to decode ' + JSON.stringify(encoded))

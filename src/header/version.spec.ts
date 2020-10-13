@@ -5,20 +5,20 @@ import { strict as assert } from 'assert'
 
 describe('Version', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[Version.Value, Version.Portable, MessagepackSerializedData]>) => {
+  const testPackValue = (tests:Array<[Version, Version.Encoded, MessagepackSerializedData]>) => {
    for (let test of tests) {
-    let [value, portable, packed] = test
-    assert.deepEqual(portable, Version.toPortable(value))
-    assert.deepEqual(Buffer.from(packed), pack(Version.toPortable(value)))
-    assert.deepEqual(portable, unpack(pack(Version.toPortable(value))))
-    assert.deepEqual(value, Version.fromPortable(unpack(pack(Version.toPortable(value)))))
+    let [value, encoded, packed] = test
+    assert.deepEqual(encoded, value.encode())
+    assert.deepEqual(Buffer.from(packed), pack(value.encode()))
+    assert.deepEqual(encoded, unpack(pack(value.encode())))
+    assert.deepEqual(value, Version.decode(unpack(pack(value.encode()))))
    }
   }
 
   it('each version has the correct pack value', () => {
    testPackValue([
-    [Version.Value.One, [ 1, 0 ], [146, 1, 0]],
-    [Version.Value.Two, [ 2, 0 ], [146, 2, 0]],
+    [new Version(Version.Value.One), [ 1, 0 ], [146, 1, 0]],
+    [new Version(Version.Value.Two), [ 2, 0 ], [146, 2, 0]],
    ])
   })
 
@@ -26,15 +26,15 @@ describe('Version', () => {
    // this error happens when a runtime value is structurally sound according to
    // the typescript type system but doesn't map to any known version
    assert.deepEqual(
-    Error('failed to parse a Version from: [3,0]'),
-    Version.fromPortable([3, 0])
+    Error('Version failed to decode [3,0]'),
+    Version.decode([3, 0])
    )
 
    // this error happens when a runtime unpack subverts the typescript type
    // system by creating a version tuple with a major but no minor value
    assert.deepEqual(
-    Error('failed to parse a Version from: [3]'),
-    Version.fromPortable(unpack(Buffer.from([145, 3])))
+    Error('Version failed to decode [3]'),
+    Version.decode(unpack(Buffer.from([145, 3])))
    )
   })
  })

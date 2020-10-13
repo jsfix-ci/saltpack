@@ -5,24 +5,22 @@ import { strict as assert } from 'assert'
 
 describe('SenderSecretBox', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[SenderSecretBox.Value, SenderSecretBox.Portable, MessagepackSerializedData]>) => {
+  const testPackValue = (tests:Array<[SenderSecretBox, SenderSecretBox.Encoded, MessagepackSerializedData]>) => {
    for (let test of tests) {
     let [value, portable, packed] = test
-    assert.deepEqual(portable, SenderSecretBox.toPortable(value))
-    assert.deepEqual(Buffer.from(packed), pack(SenderSecretBox.toPortable(value)))
-    assert.deepEqual(Buffer.from(portable), unpack(pack(SenderSecretBox.toPortable(value))))
-    assert.deepEqual(value, SenderSecretBox.fromPortable(unpack(pack(SenderSecretBox.toPortable(value)))))
+    assert.deepEqual(portable, value.encode())
+    assert.deepEqual(Buffer.from(packed), pack(value.encode()))
+    assert.deepEqual(Buffer.from(portable), unpack(pack(value.encode())))
+    assert.deepEqual(value, SenderSecretBox.decode(unpack(pack(value.encode()))))
    }
   }
 
   it('each version has the correct pack value', () => {
    testPackValue([
     [
-     {
-      secretBox: Uint8Array.from([1, 2, 3, 4, 5])
-     },
-     Uint8Array.from([1, 2, 3, 4, 5]),
-     [196, 5, 1, 2, 3, 4, 5]
+     new SenderSecretBox(Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32])),
+     Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]),
+     [196, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
     ],
    ])
   })
@@ -30,8 +28,8 @@ describe('SenderSecretBox', () => {
   it('parse has some error handling', () => {
    // this error happens when a runtime unpack subverts typescript type rails
    assert.deepEqual(
-    SenderSecretBox.fromPortable(unpack(Buffer.from([168, 115, 97, 108, 116, 112, 97, 99, 107]))),
-    Error('failed to parse a SenderSecretBox from: "saltpack"'),
+    SenderSecretBox.decode(unpack(Buffer.from([168, 115, 97, 108, 116, 112, 97, 99, 107]))),
+    Error('SenderSecretBox failed to decode "saltpack"'),
    )
   })
  })

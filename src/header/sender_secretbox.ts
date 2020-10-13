@@ -1,29 +1,24 @@
-import { parse as mpParse } from '../messagepack/parse'
+// > The sender secretbox is a crypto_secretbox containing the sender's
+// > long-term public key, encrypted with the payload key from below.
+export class SenderSecretBox {
+ private value: SenderSecretBox.Value
+ constructor(value:SenderSecretBox.Value) {
+  this.value = Uint8Array.from(value)
+ }
+
+ encode():SenderSecretBox.Encoded {
+  return this.value
+ }
+}
 
 export namespace SenderSecretBox {
- const name:string = 'SenderSecretBox'
- // > The sender secretbox is a crypto_secretbox containing the sender's
- // > long-term public key, encrypted with the payload key from below.
- export type Portable = Uint8Array
- export interface Value {
-  secretBox: Portable
- }
+ export type Encoded = Uint8Array
+ export type Value = Uint8Array
 
- export function toPortable(value:Value):Portable {
-  return value.secretBox
- }
-
- function guardPortable(portable:Portable):boolean {
-  // the Uint8Array is represented as a Buffer by messagepack round tripping so
-  // we have to fit that to our Uint8Array model
-  return portable.constructor === Buffer
- }
-
- function fromPortableUnsafe(portable:Portable):SenderSecretBox.Value|void {
-  return { secretBox: Uint8Array.from(portable) }
- }
-
- export function fromPortable(portable:Portable):SenderSecretBox.Value|Error {
-  return mpParse(guardPortable, fromPortableUnsafe, portable, name)
+ export function decode(encoded:Encoded):SenderSecretBox|Error {
+  if (encoded.length === 32 && encoded.constructor === Buffer ) {
+   return new SenderSecretBox(encoded)
+  }
+  return Error(SenderSecretBox.name + ' failed to decode ' + JSON.stringify(encoded))
  }
 }
