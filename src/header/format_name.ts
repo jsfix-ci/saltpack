@@ -1,26 +1,24 @@
-import { parse as mpParse } from '../messagepack/parse'
+export class FormatName {
+ private value: FormatName.Value
+ constructor(value:FormatName.Value) {
+  this.value = value
+ }
+
+ encode():FormatName.Encoded {
+  return this.value
+ }
+}
 
 export namespace FormatName {
- const name:string = 'FormatName'
- // > The format name is the string "saltpack".
- export type Portable = string
+ export type Encoded = string
  export enum Value {
   SaltPack = "saltpack"
  }
 
- export function toPortable(value:Value):Portable {
-  return Value.SaltPack
- }
-
- function guardPortable(portable:Portable):boolean {
-  return portable === Value.SaltPack
- }
-
- function fromPortableUnsafe(portable:Portable):FormatName.Value|void {
-  return Value.SaltPack
- }
-
- export function fromPortable(portable:Portable):FormatName.Value|Error {
-  return mpParse(guardPortable, fromPortableUnsafe, portable, name)
+ export function decode(encoded:Encoded):FormatName|Error {
+  if ( encoded === Value.SaltPack ) {
+   return new FormatName(Value.SaltPack)
+  }
+  return Error(FormatName.name + ' failed to decode ' + JSON.stringify(encoded))
  }
 }
