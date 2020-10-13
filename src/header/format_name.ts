@@ -16,7 +16,7 @@ export namespace FormatName {
  }
 
  export function decode(encoded:Encoded):FormatName|Error {
-  if ( encoded === Value.SaltPack ) {
+  if ( Value.SaltPack[encoded] ) {
    return new FormatName(Value.SaltPack)
   }
   return Error(FormatName.name + ' failed to decode ' + JSON.stringify(encoded))

@@ -5,7 +5,7 @@ import { strict as assert } from 'assert'
 
 describe('Mode', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[Mode.Value, Mode.Portable, MessagepackSerializedData]>) => {
+  const testPackValue = (tests:Array<[Mode, Mode.Encoded, MessagepackSerializedData]>) => {
    for (let test of tests) {
     let [value, portable, packed] = test
     assert.deepEqual(portable, Mode.toPortable(value))
