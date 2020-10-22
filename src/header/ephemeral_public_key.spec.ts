@@ -1,11 +1,11 @@
 import { EphemeralPublicKey } from './ephemeral_public_key'
-import { pack, unpack, MessagepackSerializedData } from '../messagepack/messagepack'
+import { pack, unpack, MessagePackData } from '../messagepack/messagepack'
 import 'mocha'
 import { strict as assert } from 'assert'
 
 describe('EphemeralPublicKey', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[EphemeralPublicKey, EphemeralPublicKey.Encoded, MessagepackSerializedData]>) => {
+  const testPackValue = (tests:Array<[EphemeralPublicKey, EphemeralPublicKey.Encoded, MessagePackData]>) => {
    for (let test of tests) {
     let [value, encoded, packed] = test
     assert.deepEqual(encoded, value.encode())

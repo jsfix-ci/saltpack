@@ -1,11 +1,11 @@
 import { SenderSecretBox } from './sender_secretbox'
-import { pack, unpack, MessagepackSerializedData } from '../messagepack/messagepack'
+import { pack, unpack, MessagePackData } from '../messagepack/messagepack'
 import 'mocha'
 import { strict as assert } from 'assert'
 
 describe('SenderSecretBox', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[SenderSecretBox, SenderSecretBox.Encoded, MessagepackSerializedData]>) => {
+  const testPackValue = (tests:Array<[SenderSecretBox, SenderSecretBox.Encoded, MessagePackData]>) => {
    for (let test of tests) {
     let [value, portable, packed] = test
     assert.deepEqual(portable, value.encode())

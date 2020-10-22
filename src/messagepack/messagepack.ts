@@ -1,6 +1,6 @@
 import { unpack as unpackLib, pack as packLib} from 'msgpackr';
 
-export type MessagepackSerializedData = Array<number>
+export type MessagePackData = Array<number>
 
 export function pack(value:any):ArrayBuffer {
  return packLib(value)

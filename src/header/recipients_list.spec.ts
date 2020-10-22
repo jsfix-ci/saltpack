@@ -1,11 +1,11 @@
 import { RecipientPublicKey, PayloadKeyBox, RecipientsList } from './recipients_list'
-import { pack, unpack, MessagepackSerializedData } from '../messagepack/messagepack'
+import { pack, unpack, MessagePackData } from '../messagepack/messagepack'
 import 'mocha'
 import { strict as assert } from 'assert'
 
 describe('RecipientPublicKey', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[RecipientPublicKey, RecipientPublicKey.Encoded, MessagepackSerializedData]>) => {
+  const testPackValue = (tests:Array<[RecipientPublicKey, RecipientPublicKey.Encoded, MessagePackData]>) => {
    for (let test of tests) {
     let [value, encoded, packed] = test
     assert.deepEqual(encoded, value.encode())
@@ -44,7 +44,7 @@ describe('RecipientPublicKey', () => {
 
 describe('PayloadKeyBox', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[PayloadKeyBox, PayloadKeyBox.Encoded, MessagepackSerializedData]>) => {
+  const testPackValue = (tests:Array<[PayloadKeyBox, PayloadKeyBox.Encoded, MessagePackData]>) => {
    for (let test of tests) {
     let [value, encoded, packed] = test
     assert.deepEqual(encoded, value.encode())
@@ -78,7 +78,7 @@ describe('PayloadKeyBox', () => {
 
 describe('RecipientsList', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[RecipientsList, RecipientsList.Encoded, MessagepackSerializedData]>) => {
+  const testPackValue = (tests:Array<[RecipientsList, RecipientsList.Encoded, MessagePackData]>) => {
    for (let test of tests) {
     let [value, encoded, packed] = test
     assert.deepEqual(encoded, value.encode())
