@@ -1,22 +1,21 @@
-import * as EphemeralPublicKey from './ephemeral_public_key'
+import * as PayloadKeyBox from './payload_key_box'
 import * as MP from '../messagepack/messagepack'
-import 'mocha'
 import { strict as assert } from 'assert'
 import * as E from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/pipeable'
 
-describe('EphemeralPublicKey', () => {
+describe('PayloadKeyBox', () => {
  describe('messagepack', () => {
-  const testPackValue = (tests:Array<[EphemeralPublicKey.Value, EphemeralPublicKey.Encoded, MP.Value]>) => {
+  const testPackValue = (tests:Array<[PayloadKeyBox.Value, PayloadKeyBox.Encoded, MP.Value]>) => {
    for (let test of tests) {
     let [value, encoded, packed] = test
-    assert.deepEqual(encoded, EphemeralPublicKey.Codec.encode(value))
-    assert.deepEqual(packed, MP.Codec.encode(EphemeralPublicKey.Codec.encode(value)))
-    assert.deepEqual(E.right(encoded), MP.Codec.decode(MP.Codec.encode(EphemeralPublicKey.Codec.encode(value))))
+    assert.deepEqual(encoded, PayloadKeyBox.Codec.encode(value))
+    assert.deepEqual(packed, MP.Codec.encode(PayloadKeyBox.Codec.encode(value)))
+    assert.deepEqual(E.right(encoded), MP.Codec.decode(MP.Codec.encode(PayloadKeyBox.Codec.encode(value))))
     assert.deepEqual(E.right(value), pipe(
-     MP.Codec.encode(EphemeralPublicKey.Codec.encode(value)),
+     MP.Codec.encode(PayloadKeyBox.Codec.encode(value)),
      MP.Codec.decode,
-     E.chain(EphemeralPublicKey.Codec.decode),
+     E.chain(PayloadKeyBox.Codec.decode),
     ))
    }
   }
@@ -31,19 +30,11 @@ describe('EphemeralPublicKey', () => {
    ])
   })
 
-  it('parse has some error handling', () => {
-   // this error happens when a runtime value is structurally sound according to
-   // the typescript type system but doesn't have the right length
-   assert.ok(
-    E.isLeft(
-     EphemeralPublicKey.Codec.decode(Uint8Array.from([1]))
-    )
-   )
-
+  it('decode has some error handling', () => {
    // this error happens when a runtime unpack subverts typescript type rails
    assert.ok(
     E.isLeft(
-     EphemeralPublicKey.Codec.decode(MP.Codec.decode(Buffer.from([145, 3])))
+     PayloadKeyBox.Codec.decode(MP.Codec.decode(Buffer.from([168, 115, 97, 108, 116, 112, 97, 99, 107]))),
     )
    )
   })

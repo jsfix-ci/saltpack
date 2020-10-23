@@ -1,24 +1,15 @@
+import * as Sized from '../bytes/sized'
+import * as C from 'io-ts/Codec'
+
 // > The sender secretbox is a crypto_secretbox containing the sender's
 // > long-term public key, encrypted with the payload key from below.
-export class SenderSecretBox {
- private value: SenderSecretBox.Value
- constructor(value:SenderSecretBox.Value) {
-  this.value = Uint8Array.from(value)
- }
+export type Value = Sized.Value
+export type Encoded = Sized.Encoded
 
- encode():SenderSecretBox.Encoded {
-  return this.value
- }
-}
+// @todo not sure about this
+const length = 32
 
-export namespace SenderSecretBox {
- export type Encoded = Uint8Array
- export type Value = Uint8Array
+export const decoder = Sized.decoderBuilder(length)
+export const encoder = Sized.encoder
 
- export function decode(encoded:Encoded):SenderSecretBox|Error {
-  if (encoded.length === 32 && encoded.constructor === Buffer ) {
-   return new SenderSecretBox(encoded)
-  }
-  return Error(SenderSecretBox.name + ' failed to decode ' + JSON.stringify(encoded))
- }
-}
+export const Codec: C.Codec<unknown, Encoded, Value> = C.make(decoder, encoder)

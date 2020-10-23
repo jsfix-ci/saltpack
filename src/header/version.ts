@@ -37,7 +37,3 @@ const encoder: E.Encoder<Encoded, Value> = {
 }
 
 export const Codec: C.Codec<unknown, Encoded, Value> = C.make(decoder, encoder)
-
-// const unpack: D.Decoder<MessagePackData, Value> = pipe(
-//
-// )

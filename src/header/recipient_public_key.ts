@@ -3,10 +3,12 @@ import * as E from 'io-ts/Encoder'
 import * as C from 'io-ts/Codec'
 import * as PublicKey from '../ed25519/public_key'
 
-// > The ephemeral public key is a NaCl public encryption key, 32 bytes. The
-// > ephemeral keypair is generated at random by the sender and only used for
-// > one message.
+// > The recipient public key is the recipient's long-term NaCl public
+// > encryption key. This field may be null, when the recipients are anonymous.
 export type Value = PublicKey.Value
 export type Encoded = PublicKey.Encoded
+
+export const decoder = PublicKey.decoder
+export const encoder = PublicKey.encoder
 
 export const Codec = PublicKey.Codec

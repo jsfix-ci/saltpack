@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/hummhive/saltpack#readme",
   "dependencies": {
+    "@msgpack/msgpack": "^2.3.0",
     "fp-ts": "^2.8.4",
     "io-ts": "^2.2.11",
     "msgpackr": "^0.5.3"

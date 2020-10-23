@@ -1,25 +1,17 @@
+import * as D from 'io-ts/Decoder'
+import * as E from 'io-ts/Encoder'
+import * as C from 'io-ts/Codec'
+
 // > The format name is the string "saltpack".
-export class FormatName {
- private value: FormatName.Value
- constructor(value:FormatName.Value) {
-  this.value = value
- }
-
- encode():FormatName.Encoded {
-  return this.value
- }
+export const enum Value {
+ SaltPack = "saltpack"
 }
 
-export namespace FormatName {
- export type Encoded = string
- export const enum Value {
-  SaltPack = "saltpack"
- }
+export type Encoded = string
 
- export function decode(encoded:Encoded):FormatName|Error {
-  if ( Value.SaltPack === encoded ) {
-   return new FormatName(Value.SaltPack)
-  }
-  return Error(FormatName.name + ' failed to decode ' + JSON.stringify(encoded))
- }
+export const decoder: D.Decoder<unknown, Value.SaltPack> = D.literal(Value.SaltPack)
+export const encoder: E.Encoder<Encoded, Value> = {
+ encode: (v: Value) => Value.SaltPack
 }
+
+export const Codec: C.Codec<unknown, Encoded, Value> = C.make(decoder, encoder)
