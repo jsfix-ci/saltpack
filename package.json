@@ -22,7 +22,8 @@
     "@msgpack/msgpack": "^2.3.0",
     "fp-ts": "^2.8.4",
     "io-ts": "^2.2.11",
-    "msgpackr": "^0.5.3"
+    "msgpackr": "^0.5.3",
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^9.0.0",

@@ -38,5 +38,20 @@ describe('RecipientPublicKey', () => {
     )
    )
   })
+
+  it('should have the right nonce', () => {
+   const doTests = (tests:Array<[ number, Uint8Array ]>) => {
+    for (let test of tests) {
+     let [ input, output ] = test
+     assert.deepEqual(RecipientPublicKey.nonce(input), output)
+    }
+   }
+   doTests([
+    [0, Uint8Array.from([115, 97, 108, 116, 112, 97, 99, 107, 95, 114, 101, 99, 105, 112, 115, 98, 0, 0, 0, 0, 0, 0, 0, 0])],
+    [1, Uint8Array.from([115, 97, 108, 116, 112, 97, 99, 107, 95, 114, 101, 99, 105, 112, 115, 98, 0, 0, 0, 0, 0, 0, 0, 1])],
+    [2, Uint8Array.from([115, 97, 108, 116, 112, 97, 99, 107, 95, 114, 101, 99, 105, 112, 115, 98, 0, 0, 0, 0, 0, 0, 0, 2])],
+    [1000, Uint8Array.from([115, 97, 108, 116, 112, 97, 99, 107, 95, 114, 101, 99, 105, 112, 115, 98, 0, 0, 0, 0, 0, 0, 3, 232])],
+   ])
+  })
  })
 })
