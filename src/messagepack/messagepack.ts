@@ -8,7 +8,7 @@ import * as Bytes from '../bytes/bytes'
 export type Value = unknown
 export type Encoded = Uint8Array
 
-const decoder: D.Decoder<unknown, Value> = pipe(
+export const decoder: D.Decoder<unknown, Value> = pipe(
  Bytes.decoder,
  D.parse(a => {
   try {
@@ -19,7 +19,7 @@ const decoder: D.Decoder<unknown, Value> = pipe(
  })
 )
 
-const encoder: E.Encoder<Encoded, Value> = {
+export const encoder: E.Encoder<Encoded, Value> = {
  encode: (v: Value) => encode(v)
 }
 

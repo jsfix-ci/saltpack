@@ -14,7 +14,7 @@ export enum Value {
 
 export type Encoded = number
 
-const decoder: D.Decoder<unknown, Value> = pipe(
+export const decoder: D.Decoder<unknown, Value> = pipe(
  D.number,
  D.parse(a => {
   if (Value[a]) {
@@ -24,7 +24,7 @@ const decoder: D.Decoder<unknown, Value> = pipe(
  }),
 )
 
-const encoder: E.Encoder<Encoded, Value> = {
+export const encoder: E.Encoder<Encoded, Value> = {
  encode: (v: Value) => v
 }
 

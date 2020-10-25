@@ -12,7 +12,7 @@ export enum Value {
 
 export type Encoded = [ number, number ]
 
-const decoder: D.Decoder<unknown, Value> = pipe(
+export const decoder: D.Decoder<unknown, Value> = pipe(
  D.array(D.number),
  D.refine((a): a is Array<number> => a.length === 2, 'Length'),
  D.parse(a => {
@@ -27,7 +27,7 @@ const decoder: D.Decoder<unknown, Value> = pipe(
  })
 )
 
-const encoder: E.Encoder<Encoded, Value> = {
+export const encoder: E.Encoder<Encoded, Value> = {
  encode: (v: Value) => {
   switch (v) {
    case Value.One: return [ 1, 0 ]
