@@ -6,6 +6,7 @@ import * as PublicKey from '../ed25519/public_key'
 // > The recipient public key is the recipient's long-term NaCl public
 // > encryption key. This field may be null, when the recipients are anonymous.
 export type Value = PublicKey.Value
+export type Values = Array<Value>
 export type Encoded = PublicKey.Encoded
 
 export const decoder = PublicKey.decoder

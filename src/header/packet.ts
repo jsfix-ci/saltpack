@@ -1,20 +1,40 @@
 import * as BoxKeyPair from '../ed25519/box_keypair'
 import * as PublicKey from '../ed25519/public_key'
 import * as NaCl from 'tweetnacl'
+import * as Bytes from '../bytes/bytes'
+import * as SenderSecretBox from './sender_secretbox'
+import * as RecipientsList from './recipients_list'
+import * as Mode from './mode'
+import * as RecipientPublicKey from './recipient_public_key'
+import * as SenderKeyNonce from './sender_key_nonce'
+import * as FormatName from './format_name'
+import * as Version from './version'
+import * as MP from '../messagepack/messagepack'
 
-export class Packet {
+type PacketList = [
+ FormatName.Value,
+ Version.Value,
+ Mode.Value,
+ PublicKey.Value,
+ SenderSecretBox.Value,
+ RecipientsList.Value,
+]
+
+export class Sender {
  private payloadKeyPair: BoxKeyPair.Value
  private ephemeralKeyPair: BoxKeyPair.Value
- private encryptedSenderPublicKey: Bytes.Value
 
  private senderSecretBox: SenderSecretBox.Value
- private recipientsList: RecipientsList.Value
+ private recipientsList: RecipientsList.Value = []
+
+ private theList: PacketList
+ private theListPacked: MP.Value
 
  // When composing a message, the sender follows these steps to generate the header:
  constructor(
   mode: Mode.Value,
-  senderKeyPair: KeyPair.Value,
-  recipientPublicKeys: Array<RecipientPublicKey.Value>,
+  senderKeyPair: BoxKeyPair.Value,
+  recipientPublicKeys: RecipientPublicKey.Values,
   visibleRecipients: boolean,
  ) {
   // 1. Generate a random 32-byte payload key.
@@ -34,7 +54,7 @@ export class Packet {
   //    recipient index, where the first recipient is index zero. Pair these
   //    with the recipients' public keys, or null for anonymous recipients, and
   //    collect the pairs into the recipients list.
-  this.recipientsList: RecipientsList.Value = recipientPublicKeys.map((recipientPublicKey:RecipientPublicKey.Value, index:number) =>
+  this.recipientsList = recipientPublicKeys.map((recipientPublicKey:RecipientPublicKey.Value, index:number) =>
    [
     ( visibleRecipients ? recipientPublicKey : null ),
     NaCl.box(
@@ -49,9 +69,9 @@ export class Packet {
   // 5. Collect the format name, version, and mode into a list, followed by the
   //    ephemeral public key, the sender secretbox, and the nested recipients
   //    list.
-  this.theList: PacketList = [
-   FormatName.SaltPack,
-   Version.Two,
+  this.theList = [
+   FormatName.Value.SaltPack,
+   Version.Value.Two,
    mode,
    this.ephemeralKeyPair.publicKey,
    this.senderSecretBox,
@@ -59,7 +79,7 @@ export class Packet {
   ]
 
   // 6. Serialize the list from #5 into a MessagePack array object.
-  this.theListPacked: MP.Value = MP.Codec.encode(PacketList.Codec.encode(theList))
+  this.theListPacked = MP.Codec.encode(PacketList.Codec.encode(theList))
 
   // 7. Take the crypto_hash (SHA512) of the bytes from #6. This is the header
   //    hash.
@@ -128,60 +148,78 @@ export class Packet {
  }
 }
 
-// Recipients parse the header of a message using the following steps:
-export const decoder: D.Decoder<unknown, Packet> = pipe(
- Bytes.decoder,
- // 1. Deserialize the header bytes from the message stream using MessagePack.
- //    (What's on the wire is twice-encoded, so the result of unpacking will be
- //    once-encoded bytes.)
- MP.decoder,
- D.parse(a => {
-  // 2. Compute the crypto_hash (SHA512) of the bytes from #1 to give the header hash.
-  let headerHash = NaCl.hash(a)
-  // 3. Deserialize the bytes from #1 again using MessagePack to give the header list.
-  let theList = pipe(
-   () => a,
-   MP.Codec.decode,
-   E.chain(PacketList.Codec.decode),
-  )
-  // 4. Sanity check the format name, version, and mode.
-  if ( isLeft(theList) ) {
-   return D.failure(a, JSON.stringify(theList))
-  }
-  let [
-   formatName,
-   version,
-   mode,
-   ephemeralPublicKey,
-   senderSecretBox,
-   recipientsList,
-  ] = theList.right
+export class Reciever {
 
-  // 5. Precompute the ephemeral shared secret using crypto_box_beforenm with
-  // the ephemeral public key and the recipient's private key.
-  let ephemeralSharedSecret = NaCl.box.before(ephemeralPublicKey, recipientKeyPair.privateKey)
+ private recipientKeyPair: KeyPair.Value
 
-  // 6. Try to open each of the payload key boxes in the recipients list using
-  // crypto_box_open_afternm, the precomputed secret from #5, and the nonce
-  // saltpack_recipsbXXXXXXXX. XXXXXXXX is 8-byte big-endian unsigned recipient
-  // index, where the first recipient is index 0. Successfully opening one gives
-  // the payload key.
-  let payloadKey = recipientsList.reduce((acc, item, index) => {
-   if (!acc) {
-    let attempt = NaCl.box.after(item, RecipientPublicKey.nonce(index), ephemeralSharedSecret)
-    if (attempt) {
-     return attempt
-    }
+ constructor(
+  recipientKeyPair: KeyPair.Value
+ ) {
+  this.recipientKeyPair = recipientKeyPair
+ }
+
+ // Recipients parse the header of a message using the following steps:
+ export const decoder: D.Decoder<unknown, Packet> = pipe(
+  Bytes.decoder,
+  // 1. Deserialize the header bytes from the message stream using MessagePack.
+  //    (What's on the wire is twice-encoded, so the result of unpacking will be
+  //    once-encoded bytes.)
+  MP.decoder,
+  D.parse(a => {
+   // 2. Compute the crypto_hash (SHA512) of the bytes from #1 to give the header hash.
+   let headerHash = NaCl.hash(a)
+   // 3. Deserialize the bytes from #1 again using MessagePack to give the header list.
+   let theList = pipe(
+    () => a,
+    MP.Codec.decode,
+    E.chain(PacketList.Codec.decode),
+   )
+   // 4. Sanity check the format name, version, and mode.
+   if ( isLeft(theList) ) {
+    return D.failure(a, JSON.stringify(theList))
    }
+   let [
+    formatName,
+    version,
+    mode,
+    ephemeralPublicKey,
+    senderSecretBox,
+    recipientsList,
+   ] = theList.right
+
+   // 5. Precompute the ephemeral shared secret using crypto_box_beforenm with
+   // the ephemeral public key and the recipient's private key.
+   let ephemeralSharedSecret = NaCl.box.before(
+    ephemeralPublicKey,
+    this.recipientKeyPair.privateKey
+   )
+
+   // 6. Try to open each of the payload key boxes in the recipients list using
+   // crypto_box_open_afternm, the precomputed secret from #5, and the nonce
+   // saltpack_recipsbXXXXXXXX. XXXXXXXX is 8-byte big-endian unsigned recipient
+   // index, where the first recipient is index 0. Successfully opening one gives
+   // the payload key.
+   let payloadKey = recipientsList.reduce((acc, item, index) => {
+    if (!acc) {
+     let attempt = NaCl.box.after(
+      item,
+      RecipientPublicKey.nonce(index),
+      ephemeralSharedSecret
+     )
+     if (attempt) {
+      return attempt
+     }
+    }
+   })
+   if (!payloadKey) {
+    return D.failure(a, 'no payload key found for our keypair')
+   }
+
+   // 7. Open the sender secretbox using crypto_secretbox_open with the payload
+   // key from #6 and the nonce saltpack_sender_key_sbox.
+   let senderSecret = NaCl.secretbox.open(senderSecretBox, NONCE, payloadKey)
+
+   // 8. Compute the recipient's MAC key as in steps 9-14 above.
   })
-  if (!payloadKey) {
-   return D.failure(a, 'no payload key found for our keypair')
-  }
-
-  // 7. Open the sender secretbox using crypto_secretbox_open with the payload
-  // key from #6 and the nonce saltpack_sender_key_sbox.
-  let senderSecret = NaCl.secretbox.open(senderSecretBox, NONCE, payloadKey)
-
-  // 8. Compute the recipient's MAC key as in steps 9-14 above.
- })
-)
+ )
+}

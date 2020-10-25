@@ -8,7 +8,7 @@ import * as C from 'io-ts/Codec'
 // > including an encrypted copy of the payload key (see below). Note that a
 // > MessagePack array can hold at most at most 2³² − 1 elements, so therefore
 // > an encrypted message can have at most 2³² − 1 recipients.
-export type Value = Array<[ RecipientPublicKey.Value, PayloadKeyBox.Value ]>
+export type Value = Array<[ RecipientPublicKey.Value | null, PayloadKeyBox.Value ]>
 export type Encoded = Array<[ RecipientPublicKey.Encoded, PayloadKeyBox.Encoded ]>
 
 export const decoder: D.Decoder<unknown, Value> = D.array(D.tuple(RecipientPublicKey.decoder, PayloadKeyBox.decoder))
