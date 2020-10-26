@@ -98,7 +98,15 @@ export class Sender {
   //    After generating the header, the sender computes each recipient's MAC
   //    key, which will be used below to authenticate the payload:
   this.macs = recipientPublicKeys.map((recipientPublicKey, index) =>
-   Mac.calculate(this.headerHash, recipientPublicKey, index)
+   Mac.calculate(
+    this.headerHash,
+    index,
+    // @todo support anon sending
+    senderKeyPair.secretKey,
+    recipientPublicKey,
+    this.ephemeralKeyPair.secretKey,
+    recipientPublicKey,
+   )
   )
  }
 }
@@ -186,23 +194,30 @@ export class Reciever {
       }
       return acc
      }, [ null, 0 ])
-     if (!payloadKey) {
+     if (payloadKey === null) {
       return D.failure(value, 'no payload key found for our keypair')
      }
 
      // 7. Open the sender secretbox using crypto_secretbox_open with the payload
      // key from #6 and the nonce saltpack_sender_key_sbox.
-     let senderSecret = NaCl.secretbox.open(
+     let senderPublicKey = NaCl.secretbox.open(
       senderSecretBox,
       SenderKeyNonce.NONCE,
       payloadKey
      )
 
+     if (senderPublicKey === null) {
+      return D.failure(value, 'failed to decrypt sender public key')
+     }
+
      // 8. Compute the recipient's MAC key as in steps 9-14 above.
      this.mac = Mac.calculate(
       headerHash,
-      this.recipientKeyPair.publicKey,
       index,
+      this.recipientKeyPair.secretKey,
+      senderPublicKey,
+      this.recipientKeyPair.secretKey,
+      ephemeralPublicKey,
      )
 
      return D.success(theList)
