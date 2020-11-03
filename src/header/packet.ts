@@ -33,6 +33,14 @@ export class Sender {
 
  private macs: Mac.Values
 
+ packetWire() {
+  return this.headerPacked
+ }
+
+ packet() {
+  return this.theList
+ }
+
  // When composing a message, the sender follows these steps to generate the header:
  constructor(
   mode: Mode.Value,
@@ -121,6 +129,10 @@ export class Reciever {
  private mac!: Mac.Value
  private theList: PacketList.Value
 
+ packet() {
+  return this.theList
+ }
+
  constructor(
   recipientKeyPair: BoxKeyPair.Value,
   theListPacked: MP.Encoded,
@@ -151,8 +163,7 @@ export class Reciever {
 
      // 3. Deserialize the bytes from #1 again using MessagePack to give the header list.
      let maybeTheList = pipe(
-      () => value,
-      MP.Codec.decode,
+      MP.Codec.decode(value),
       E.chain(PacketList.Codec.decode),
      )
 
@@ -184,7 +195,7 @@ export class Reciever {
      // the payload key.
      let [ payloadKey, index ] = recipientsList.reduce(( acc:[ Bytes.Value|null, number ], item:RecipientsList.Item, index:number ) => {
       if (!acc[0]) {
-       let attempt = NaCl.box.after(
+       let attempt = NaCl.box.open.after(
         item[1],
         Nonce.indexed(RecipientPublicKey.NONCE_PREFIX, index),
         ephemeralSharedSecret

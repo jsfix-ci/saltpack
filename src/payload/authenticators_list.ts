@@ -1,4 +1,4 @@
-
+import * as Crypto from 'crypto'
 
 // > The authenticators list contains 32-byte HMAC tags, one for each recipient,
 // > which authenticate the payload secretbox together with the message header.
@@ -16,15 +16,16 @@ export type Value = Array<MacTag>
 export const calculate = (
  index:number,
  headerHash:sha512,
- final_flag:FinalFlag,
+ final_flag:FinalFlag.Value,
  payloadSecretBox:Uint8Array,
+ recpientMacKey:Mac.Value,
 ) => {
  // 1. Concatenate the header hash, the nonce for the payload secretbox, the
  //    final flag byte (0x00 or 0x01), and the payload secretbox itself.
  let bytes = UintArray.from([
   ...headerHash,
   ...Nonce.indexed(PayloadSecretBox.NONCE_PREFIX, index),
-  ...FinalFlag,
+  ...final_flag,
   ...payloadSecretBox,
  ])
 
@@ -33,5 +34,8 @@ export const calculate = (
 
  // 3. For each recipient, compute the crypto_auth (HMAC-SHA512, truncated to 32
  //    bytes) of the hash from #2, using that recipient's MAC key.
-
+ let hmac = Crypto
+  .createHmac('sha512', recipientMacKey)
+  .update(hash)
+  .digest()
 }

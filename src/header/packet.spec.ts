@@ -6,7 +6,7 @@ import * as BoxKeyPair from '../ed25519/box_keypair'
 import * as BoxKeyPairFixture from '../ed25519/box_keypair.fixture'
 import * as RecipientPublicKey from './recipient_public_key'
 import * as Mode from './mode'
-
+import * as MP from '../messagepack/messagepack'
 
 describe('Packet', () => {
  describe('Sender', () => {
@@ -21,7 +21,30 @@ describe('Packet', () => {
    ].map(kp => kp.publicKey)
    let visibleRecipients: boolean = false
 
-   new Packet.Sender(mode, senderKeyPair, recipientPublicKeys, visibleRecipients)
+   let sender = new Packet.Sender(mode, senderKeyPair, recipientPublicKeys, visibleRecipients)
+
+   let bobReceiver = new Packet.Reciever(bob, sender.packetWire())
+
+   assert.deepEqual(
+    bobReceiver.packet(),
+    sender.packet(),
+   )
+
+   let carolReceiver = new Packet.Reciever(carol, sender.packetWire())
+   assert.deepEqual(
+    carolReceiver.packet(),
+    sender.packet(),
+   )
+
+   let sam: BoxKeyPair.Value = BoxKeyPair.generate()
+   try {
+    new Packet.Reciever(sam, sender.packetWire())
+    assert.ok(false)
+   } catch (e) {
+    assert.ok(
+     e.toString().includes('no payload key found for our keypair')
+    )
+   }
   })
  })
 })
