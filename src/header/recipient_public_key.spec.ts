@@ -3,6 +3,7 @@ import * as MP from '../messagepack/messagepack'
 import { strict as assert } from 'assert'
 import * as E from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/pipeable'
+import * as Nonce from '../nonce/nonce'
 
 describe('RecipientPublicKey', () => {
  describe('messagepack', () => {
@@ -43,7 +44,7 @@ describe('RecipientPublicKey', () => {
    const doTests = (tests:Array<[ number, Uint8Array ]>) => {
     for (let test of tests) {
      let [ input, output ] = test
-     assert.deepEqual(RecipientPublicKey.nonce(input), output)
+     assert.deepEqual(Nonce.indexed(RecipientPublicKey.NONCE_PREFIX, input), output)
     }
    }
    doTests([

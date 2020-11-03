@@ -15,6 +15,7 @@ import * as Sha512 from '../ed25519/sha512'
 import * as Mac from './mac'
 import * as D from 'io-ts/Decoder'
 import * as E from 'fp-ts/lib/Either'
+import * as Nonce from '../nonce/nonce'
 import { pipe } from 'fp-ts/lib/pipeable'
 
 export class Sender {
@@ -65,7 +66,7 @@ export class Sender {
     ( visibleRecipients ? recipientPublicKey : null ),
     NaCl.box(
      this.payloadKeyPair.secretKey,
-     RecipientPublicKey.nonce(index),
+     Nonce.indexed(RecipientPublicKey.NONCE_PREFIX, index),
      recipientPublicKey,
      this.ephemeralKeyPair.secretKey,
     ),
@@ -185,7 +186,7 @@ export class Reciever {
       if (!acc[0]) {
        let attempt = NaCl.box.after(
         item[1],
-        RecipientPublicKey.nonce(index),
+        Nonce.indexed(RecipientPublicKey.NONCE_PREFIX, index),
         ephemeralSharedSecret
        )
        if (attempt) {
