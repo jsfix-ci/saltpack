@@ -10,7 +10,7 @@ import * as MP from '../messagepack/messagepack'
 
 describe('Packet', () => {
  describe('Sender', () => {
-  it('should construct', () => {
+  it('should round trip', () => {
    let mode: Mode.Value = Mode.Value.Encryption
    let senderKeyPair: BoxKeyPair.Value = BoxKeyPairFixture.alice
    let bob: BoxKeyPair.Value = BoxKeyPair.generate()

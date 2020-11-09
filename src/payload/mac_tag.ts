@@ -1,3 +1,7 @@
+import * as Sized from '../bytes/sized'
+import * as Bytes from '../bytes/bytes'
+import * as C from 'io-ts/Codec'
+
 export const length = 32
 
 export type Value = Sized.Value

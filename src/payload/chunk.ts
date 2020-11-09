@@ -1,1 +1,1 @@
-export type Chunk = Uint8Array
+export type Value = Uint8Array

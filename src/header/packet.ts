@@ -19,8 +19,8 @@ import * as Nonce from '../nonce/nonce'
 import { pipe } from 'fp-ts/lib/pipeable'
 
 export class Sender {
- private payloadKeyPair: BoxKeyPair.Value
- private ephemeralKeyPair: BoxKeyPair.Value
+ private _payloadKeyPair: BoxKeyPair.Value
+ private _ephemeralKeyPair: BoxKeyPair.Value
 
  private senderSecretBox: SenderSecretBox.Value
  private recipientsList: RecipientsList.Value
@@ -31,7 +31,23 @@ export class Sender {
  private headerHash: Sha512.Value
  private headerPacked: MP.Encoded
 
- private macs: Mac.Values
+ private _macs: Mac.Values
+
+ payloadKeyPair():BoxKeyPair.Value {
+  return this._payloadKeyPair
+ }
+
+ ephemeralKeyPair():BoxKeyPair.Value {
+  return this._ephemeralKeyPair
+ }
+
+ hash():Sha512.Value {
+  return this.headerHash
+ }
+
+ macs(): Mac.Values {
+  return this._macs
+ }
 
  packetWire() {
   return this.headerPacked
@@ -49,10 +65,10 @@ export class Sender {
   visibleRecipients: boolean,
  ) {
   // 1. Generate a random 32-byte payload key.
-  this.payloadKeyPair = BoxKeyPair.generate()
+  this._payloadKeyPair = BoxKeyPair.generate()
 
   // 2. Generate a random ephemeral keypair, using crypto_box_keypair.
-  this.ephemeralKeyPair = BoxKeyPair.generate()
+  this._ephemeralKeyPair = BoxKeyPair.generate()
 
   // 3. Encrypt the sender's long-term public key using crypto_secretbox with
   //    the payload key and the nonce saltpack_sender_key_sbox, to create the
@@ -60,7 +76,7 @@ export class Sender {
   this.senderSecretBox = NaCl.secretbox(
    senderKeyPair.publicKey,
    SenderKeyNonce.NONCE,
-   this.payloadKeyPair.secretKey,
+   this.payloadKeyPair().secretKey,
   )
 
   // 4. For each recipient, encrypt the payload key using crypto_box with the
@@ -73,10 +89,10 @@ export class Sender {
    [
     ( visibleRecipients ? recipientPublicKey : null ),
     NaCl.box(
-     this.payloadKeyPair.secretKey,
+     this.payloadKeyPair().secretKey,
      Nonce.indexed(RecipientPublicKey.NONCE_PREFIX, index),
      recipientPublicKey,
-     this.ephemeralKeyPair.secretKey,
+     this.ephemeralKeyPair().secretKey,
     ),
    ]
   )
@@ -88,7 +104,7 @@ export class Sender {
    FormatName.Value.SaltPack,
    Version.Value.Two,
    mode,
-   this.ephemeralKeyPair.publicKey,
+   this.ephemeralKeyPair().publicKey,
    this.senderSecretBox,
    this.recipientsList,
   ]
@@ -106,14 +122,14 @@ export class Sender {
 
   //    After generating the header, the sender computes each recipient's MAC
   //    key, which will be used below to authenticate the payload:
-  this.macs = recipientPublicKeys.map((recipientPublicKey, index) =>
+  this._macs = recipientPublicKeys.map((recipientPublicKey, index) =>
    Mac.calculate(
     this.headerHash,
     index,
     // @todo support anon sending
     senderKeyPair.secretKey,
     recipientPublicKey,
-    this.ephemeralKeyPair.secretKey,
+    this.ephemeralKeyPair().secretKey,
     recipientPublicKey,
    )
   )
