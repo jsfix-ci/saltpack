@@ -17,6 +17,7 @@ import * as D from 'io-ts/Decoder'
 import * as E from 'fp-ts/lib/Either'
 import * as Nonce from '../nonce/nonce'
 import { pipe } from 'fp-ts/lib/pipeable'
+import * as PayloadSecretBox from '../payload/payload_secretbox'
 
 export class Sender {
  private _payloadKeyPair: BoxKeyPair.Value
@@ -136,14 +137,39 @@ export class Sender {
  }
 }
 
-export class Reciever {
+export class Receiver {
 
- private recipientKeyPair: BoxKeyPair.Value
+ private _recipientKeyPair: BoxKeyPair.Value
  // This is either set by the constructor during decoding or the decoding fails
  // and the constructor throws an error but the compiler doesn't seem to know
  // that so we add !
- private mac!: Mac.Value
+ private _mac!: Mac.Value
+ private _recipientIndex!: number
  private theList: PacketList.Value
+
+ private _headerHash: Sha512.Value
+
+ private _payloadKey!: PayloadSecretBox.Value
+
+ headerHash() {
+  return this._headerHash
+ }
+
+ recipientKeyPair() {
+  return this._recipientKeyPair
+ }
+
+ recipientIndex() {
+  return this._recipientIndex
+ }
+
+ recipientMac() {
+  return this._mac
+ }
+
+ payloadKey() {
+  return this._payloadKey
+ }
 
  packet() {
   return this.theList
@@ -153,7 +179,7 @@ export class Reciever {
   recipientKeyPair: BoxKeyPair.Value,
   theListPacked: MP.Encoded,
  ) {
-  this.recipientKeyPair = recipientKeyPair
+  this._recipientKeyPair = recipientKeyPair
   let maybeTheList = this.decoder.decode(theListPacked)
   if (E.isRight(maybeTheList)) {
    this.theList = maybeTheList.right
@@ -170,12 +196,12 @@ export class Reciever {
     // 1. Deserialize the header bytes from the message stream using MessagePack.
     //    (What's on the wire is twice-encoded, so the result of unpacking will be
     //    once-encoded bytes.)
-    E.chain(value => MP.Codec.decode(value)),
-    E.chain(value => Bytes.Codec.decode(value)),
+    E.chain(MP.Codec.decode),
+    E.chain(Bytes.Codec.decode),
     E.chain(value => {
 
      // 2. Compute the crypto_hash (SHA512) of the bytes from #1 to give the header hash.
-     let headerHash = NaCl.hash(value)
+     this._headerHash = NaCl.hash(value)
 
      // 3. Deserialize the bytes from #1 again using MessagePack to give the header list.
      let maybeTheList = pipe(
@@ -201,7 +227,7 @@ export class Reciever {
      // the ephemeral public key and the recipient's private key.
      let ephemeralSharedSecret = NaCl.box.before(
       ephemeralPublicKey,
-      this.recipientKeyPair.secretKey,
+      this.recipientKeyPair().secretKey,
      )
 
      // 6. Try to open each of the payload key boxes in the recipients list using
@@ -225,13 +251,15 @@ export class Reciever {
      if (payloadKey === null) {
       return D.failure(value, 'no payload key found for our keypair')
      }
+     this._recipientIndex = index
+     this._payloadKey = payloadKey
 
      // 7. Open the sender secretbox using crypto_secretbox_open with the payload
      // key from #6 and the nonce saltpack_sender_key_sbox.
      let senderPublicKey = NaCl.secretbox.open(
       senderSecretBox,
       SenderKeyNonce.NONCE,
-      payloadKey
+      this.payloadKey()
      )
 
      if (senderPublicKey === null) {
@@ -239,12 +267,12 @@ export class Reciever {
      }
 
      // 8. Compute the recipient's MAC key as in steps 9-14 above.
-     this.mac = Mac.calculate(
-      headerHash,
+     this._mac = Mac.calculate(
+      this.headerHash(),
       index,
-      this.recipientKeyPair.secretKey,
+      this.recipientKeyPair().secretKey,
       senderPublicKey,
-      this.recipientKeyPair.secretKey,
+      this.recipientKeyPair().secretKey,
       ephemeralPublicKey,
      )
 

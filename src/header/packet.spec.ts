@@ -23,14 +23,14 @@ describe('Packet', () => {
 
    let sender = new Packet.Sender(mode, senderKeyPair, recipientPublicKeys, visibleRecipients)
 
-   let bobReceiver = new Packet.Reciever(bob, sender.packetWire())
+   let bobReceiver = new Packet.Receiver(bob, sender.packetWire())
 
    assert.deepEqual(
     bobReceiver.packet(),
     sender.packet(),
    )
 
-   let carolReceiver = new Packet.Reciever(carol, sender.packetWire())
+   let carolReceiver = new Packet.Receiver(carol, sender.packetWire())
    assert.deepEqual(
     carolReceiver.packet(),
     sender.packet(),
@@ -38,7 +38,7 @@ describe('Packet', () => {
 
    let sam: BoxKeyPair.Value = BoxKeyPair.generate()
    try {
-    new Packet.Reciever(sam, sender.packetWire())
+    new Packet.Receiver(sam, sender.packetWire())
     assert.ok(false)
    } catch (e) {
     assert.ok(

@@ -37,8 +37,11 @@ describe('Packet', () => {
     chunk,
    );
 
-   console.log(sender.packetWire().toString())
+   let bobReceiverHeader = new HeaderPacket.Receiver(bob, header.packetWire())
+   let bobReceiverPayload = new Packet.Receiver(bobReceiverHeader, sender.packetWire())
 
+   let carolReceiverHeader = new HeaderPacket.Receiver(carol, header.packetWire())
+   let carolReceiverPayload = new Packet.Receiver(carolReceiverHeader, sender.packetWire())
   })
  })
 })
