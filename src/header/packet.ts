@@ -181,6 +181,7 @@ export class Receiver {
  ) {
   this._recipientKeyPair = recipientKeyPair
   let maybeTheList = this.decoder.decode(theListPacked)
+
   if (E.isRight(maybeTheList)) {
    this.theList = maybeTheList.right
   } else {

@@ -29,19 +29,19 @@ export class Sender {
  }
 
  constructor(
-  index: number,
+  payloadIndex: number,
   finalFlag: FinalFlag.Value,
   header: HeaderPacket.Sender,
   chunk: Chunk.Value,
  ) {
   this.finalFlag = finalFlag
-  this.payloadSecretBox = PayloadSecretBox.generate(index, chunk, header.payloadKeyPair())
+  this.payloadSecretBox = PayloadSecretBox.generate(payloadIndex, chunk, header.payloadKeyPair())
   this.authenticators = header.macs().map(
    (recipientMacKey, recipientIndex) => AuthenticatorsList.calculate(
     header.hash(),
     this.finalFlag,
     this.payloadSecretBox,
-    recipientIndex,
+    payloadIndex,
     recipientMacKey
    )
   )
@@ -59,13 +59,32 @@ export class Sender {
 export class Receiver {
 
  private _header: HeaderPacket.Receiver
+ private _payloadIndex: number
+ private _chunk!: Chunk.Value
+ private _theList: PacketList.Value
+
+ payloadIndex():number {
+  return this._payloadIndex
+ }
+
+ chunk():Chunk.Value {
+  return this._chunk
+ }
 
  constructor(
+  payloadIndex: number,
   header: HeaderPacket.Receiver,
   payloadPacked: MP.Encoded,
  ) {
+  this._payloadIndex = payloadIndex
   this._header = header
-  let maybePayload = this.decoder.decode(payloadPacked)
+
+  let maybeTheList = this.decoder.decode(payloadPacked)
+  if (E.isRight(maybeTheList)) {
+   this._theList = maybeTheList.right
+  } else {
+   throw new Error(JSON.stringify(maybeTheList))
+  }
  }
 
  public decoder: D.Decoder<unknown, PacketList.Value> = {
@@ -74,10 +93,8 @@ export class Receiver {
     Bytes.Codec.decode(a),
     E.chain(MP.Codec.decode),
     E.chain(value => {
-     console.log(value)
      let maybeTheList = PacketList.Codec.decode(value)
-     console.log(maybeTheList)
-     console.log(this._header)
+
      if ( E.isLeft(maybeTheList) ) {
       return D.failure(value, JSON.stringify(maybeTheList))
      }
@@ -92,22 +109,24 @@ export class Receiver {
       this._header.headerHash(),
       theList[0],
       theList[2],
-      this._header.recipientIndex(),
+      this.payloadIndex(),
       this._header.recipientMac(),
       theList[1][this._header.recipientIndex()],
      )) {
       return D.failure(value, 'failed authenticator check')
      }
 
-     let chunk = NaCl.secretbox.open(
+     let maybeChunk = PayloadSecretBox.open(
+      this.payloadIndex(),
       theList[2],
-      Nonce.indexed(
-       PayloadSecretBox.NONCE_PREFIX,
-       this._header.recipientIndex(),
-      ),
       this._header.payloadKey(),
      )
-     console.log('chunk', chunk)
+
+     if (maybeChunk === null) {
+      return D.failure(value, 'failed to decrypt chunk')
+     }
+
+     this._chunk = maybeChunk
 
      return D.success(theList)
     })

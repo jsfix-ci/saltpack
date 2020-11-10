@@ -22,12 +22,29 @@ export const NONCE_PREFIX = Uint8Array.from([
 // > nonce is saltpack_ploadsbNNNNNNNN where NNNNNNNN is the packet number as an
 // > 8-byte big-endian unsigned integer. The first payload packet is number 0.
 export const generate = (
- index:number,
+ payloadIndex:number,
  chunk:Chunk.Value,
  payloadKeyPair:BoxKeyPair.Value,
 ):Value =>
  NaCl.secretbox(
   chunk,
-  Nonce.indexed(NONCE_PREFIX, index),
+  Nonce.indexed(
+   NONCE_PREFIX,
+   payloadIndex,
+  ),
   payloadKeyPair.secretKey,
+ )
+
+export const open = (
+ payloadIndex:number,
+ payload:Value,
+ payloadSecret:Uint8Array,
+):Chunk.Value|null =>
+ NaCl.secretbox.open(
+  payload,
+  Nonce.indexed(
+   NONCE_PREFIX,
+   payloadIndex,
+  ),
+  payloadSecret,
  )

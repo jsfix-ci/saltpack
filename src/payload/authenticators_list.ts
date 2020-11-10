@@ -33,7 +33,7 @@ export const Codec: C.Codec<unknown, Encoded, Value> = C.make(decoder, encoder)
 
 const buildHash = (
  headerHash:Sha512.Value,
- index:number,
+ payloadIndex:number,
  finalFlag:FinalFlag.Value,
  payloadSecretBox:PayloadSecretBox.Value,
 ) => {
@@ -41,7 +41,7 @@ const buildHash = (
  //    final flag byte (0x00 or 0x01), and the payload secretbox itself.
  let bytes = Uint8Array.from([
   ...headerHash,
-  ...Nonce.indexed(PayloadSecretBox.NONCE_PREFIX, index),
+  ...Nonce.indexed(PayloadSecretBox.NONCE_PREFIX, payloadIndex),
   ...Uint8Array.from([finalFlag]),
   ...payloadSecretBox,
  ])
@@ -55,13 +55,13 @@ export const calculate = (
  headerHash:Sha512.Value,
  finalFlag:FinalFlag.Value,
  payloadSecretBox:PayloadSecretBox.Value,
- index:number,
+ payloadIndex:number,
  recipientMacKey:Mac.Value,
 ):MacTag.Value => {
 
  let hash = buildHash(
   headerHash,
-  index,
+  payloadIndex,
   finalFlag,
   payloadSecretBox,
  );
@@ -80,7 +80,7 @@ export const verify = (
  headerHash:Sha512.Value,
  finalFlag:FinalFlag.Value,
  payloadSecretBox:PayloadSecretBox.Value,
- index:number,
+ payloadIndex:number,
  recipientMacKey:Mac.Value,
  authenticator: Uint8Array,
 ):boolean => {
@@ -88,7 +88,7 @@ export const verify = (
  // and then calling crypto_auth_verify.
  let hash = buildHash(
   headerHash,
-  index,
+  payloadIndex,
   finalFlag,
   payloadSecretBox,
  );
