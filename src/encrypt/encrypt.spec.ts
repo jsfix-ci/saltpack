@@ -7,7 +7,9 @@ import { strict as assert } from 'assert'
 describe('Encrypt', () => {
  describe('build', () => {
 
-  it('should construct', () => {
+  it('should round trip', function () {
+
+   this.timeout(0)
 
    let senderKeyPair: BoxKeyPair.Value = BoxKeyPairFixture.alice
    let bob: BoxKeyPair.Value = BoxKeyPair.generate()
@@ -18,13 +20,29 @@ describe('Encrypt', () => {
    ].map(kp => kp.publicKey)
    let visibleRecipients: boolean = false
 
+   let data = Uint8Array.from(Array(3000100))
+
    let encrypt = new Encrypt.Encrypt(
     senderKeyPair,
     recipientPublicKeys,
     visibleRecipients,
+    data,
    )
 
-   console.log(encrypt.headerWire().toString())
+   console.log(encrypt.wirePackets())
+
+   let decrypt = new Encrypt.Decrypt(
+    encrypt,
+    bob,
+   )
+
+   console.log(decrypt)
+   console.log(decrypt.data())
+
+   assert.deepEqual(
+    decrypt.data(),
+    data,
+   )
 
   })
 
