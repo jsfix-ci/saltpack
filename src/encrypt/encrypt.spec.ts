@@ -29,20 +29,28 @@ describe('Encrypt', () => {
     data,
    )
 
-   console.log(encrypt.wirePackets())
+   for (let recipient of [bob, carol]) {
+    let decrypt = new Encrypt.Decrypt(
+     encrypt.wirePackets(),
+     recipient,
+    )
 
-   let decrypt = new Encrypt.Decrypt(
-    encrypt,
-    bob,
-   )
+    assert.deepEqual(
+     decrypt.data(),
+     data,
+    )
+   }
 
-   console.log(decrypt)
-   console.log(decrypt.data())
-
-   assert.deepEqual(
-    decrypt.data(),
-    data,
-   )
+   let sam: BoxKeyPair.Value = BoxKeyPair.generate()
+   try {
+    new Encrypt.Decrypt(
+     encrypt.wirePackets(),
+     sam,
+    )
+    assert.ok(false)
+   } catch (e) {
+    assert.ok((''+e).includes('no payload key found for our keypair'))
+   }
 
   })
 

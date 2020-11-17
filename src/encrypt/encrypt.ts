@@ -7,11 +7,13 @@ import * as FinalFlag from '../payload/final_flag'
 
 export const CHUNK_BYTES = 1000000
 
+export type WirePackets = Array<Uint8Array>
+
 export class Encrypt {
 
- private _wirePackets: Array<Uint8Array>
+ private _wirePackets: WirePackets
 
- wirePackets() {
+ wirePackets():WirePackets {
   return this._wirePackets
  }
 
@@ -58,12 +60,18 @@ export class Decrypt {
  }
 
  constructor(
-  encrypt: Encrypt,
+  wirePackets: WirePackets,
   recipientKeyPair: BoxKeyPair.Value,
  ) {
-  this._header = new HeaderPacket.Receiver(recipientKeyPair, encrypt.wirePackets()[0])
-  this._chunks = encrypt.wirePackets().slice(1).map(
+  this._header = new HeaderPacket.Receiver(recipientKeyPair, wirePackets[0])
+  this._chunks = wirePackets.slice(1).map(
    (chunkPacket, chunkIndex) => new PayloadPacket.Receiver(chunkIndex, this._header, chunkPacket)
    )
+   if (this._chunks[this._chunks.length - 1].finalFlag() !== FinalFlag.Value.Final) {
+    throw new Error('missing final flag')
+   }
+   if (!this._chunks.slice(0, -1).every(chunk => chunk.finalFlag() === FinalFlag.Value.NotFinal)) {
+    throw new Error('final flag before last chunk')
+   }
  }
 }
