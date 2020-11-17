@@ -71,6 +71,10 @@ export class Receiver {
   return this._chunk
  }
 
+ finalFlag():FinalFlag.Value {
+  return this._theList[0]
+ }
+
  constructor(
   payloadIndex: number,
   header: HeaderPacket.Receiver,
