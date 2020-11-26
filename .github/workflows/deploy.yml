@@ -21,7 +21,7 @@ jobs:
       git config --global user.name "GitHub Action"
    - run: npm version minor
    - run: |
-      git commit -a 'bump version' -a
+      git commit -m 'bump version' -a
    - uses: ad-m/github-push-action@master
      with:
       github_token: ${{ secrets.GITHUB_TOKEN }}
