@@ -16,10 +16,11 @@ jobs:
    - uses: actions/setup-node@v2-beta
      with:
       node-version: 14
+   - run: |
+      git config --global user.email "action@github.com"
+      git config --global user.name "GitHub Action"
    - run: npm version minor
    - run: |
-      git config --local user.email "action@github.com"
-      git config --local user.name "GitHub Action"
       git commit -am 'bump version'
    - uses: ad-m/github-push-action@master
      with:
