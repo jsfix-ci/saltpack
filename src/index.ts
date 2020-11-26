@@ -1,1 +1,1 @@
-export { Encrypt, Decrypt } from './encrypt'
+export { Encrypt, Decrypt } from './encrypt/encrypt'

@@ -24,4 +24,6 @@ jobs:
         ${{ matrix.os }}-${{matrix.node }}-
         ${{ matrix.os }}-
    - run: npm install
+   # smoke test a build
+   - run: npm build
    - run: npm run test

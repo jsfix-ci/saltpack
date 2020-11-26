@@ -3,7 +3,8 @@
     "exclude": ["dist", "node_modules"],
     "compilerOptions": {
      "target": "ES2020",
-     "declaration": true
+     "declaration": true,
+     "outDir": "./dist"
     },
     "strictNullChecks": true
 }

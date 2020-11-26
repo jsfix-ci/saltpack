@@ -6,7 +6,8 @@
   "module": "dist/index.esm.js",
   "scripts": {
     "static-analysis": "eslint",
-    "test": "mocha -r ts-node/register src/**/*.spec.ts"
+    "test": "mocha -r ts-node/register src/**/*.spec.ts",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",

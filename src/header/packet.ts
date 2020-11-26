@@ -29,7 +29,7 @@ export class Sender {
  private theList: PacketList.Value
  private theListPacked: MP.Encoded
 
- private headerHash: Sha512.Value
+ private _headerHash: Sha512.Value
  private headerPacked: MP.Encoded
 
  private _macs: Mac.Values
@@ -43,7 +43,7 @@ export class Sender {
  }
 
  hash():Sha512.Value {
-  return this.headerHash
+  return this._headerHash
  }
 
  macs(): Mac.Values {
@@ -115,7 +115,7 @@ export class Sender {
 
   // 7. Take the crypto_hash (SHA512) of the bytes from #6. This is the header
   //    hash.
-  this.headerHash = NaCl.hash(this.theListPacked)
+  this._headerHash = NaCl.hash(this.theListPacked)
 
   // 8. Serialize the bytes from #6 again into a MessagePack bin object. These
   //    twice-encoded bytes are the header packet.
@@ -125,7 +125,7 @@ export class Sender {
   //    key, which will be used below to authenticate the payload:
   this._macs = recipientPublicKeys.map((recipientPublicKey, index) =>
    Mac.calculate(
-    this.headerHash,
+    this._headerHash,
     index,
     // @todo support anon sending
     senderKeyPair.secretKey,
@@ -147,7 +147,7 @@ export class Receiver {
  private _recipientIndex!: number
  private theList: PacketList.Value
 
- private _headerHash: Sha512.Value
+ private _headerHash!: Sha512.Value
 
  private _payloadKey!: PayloadSecretBox.Value
 
