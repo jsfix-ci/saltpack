@@ -21,10 +21,7 @@ jobs:
       git config --global user.name "GitHub Action"
    - run: npm version minor
    - run: |
-      git commit -am 'bump version'
-      # do an echo here because git always seems to return a non-zero exit code
-      # above due to being a commit ahead of main
-      echo
+      git commit -a 'bump version' -a
    - uses: ad-m/github-push-action@master
      with:
       github_token: ${{ secrets.GITHUB_TOKEN }}
