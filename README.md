@@ -1,5 +1,9 @@
 # saltpack
 
+## Exports
+
+This library has two exports, `Encrypt` and `Decrypt`.
+
 ## How to release
 
 CI automatically publishes to npm if it notices that the version has bumped on
