@@ -10,7 +10,7 @@ const duplexer = require('duplexer2')
 
 export const CHUNK_BYTES = 1000000
 
-export const encrypt = (
+export const Encrypt = (
   senderKeyPair:BoxKeyPair.Value,
   recipientPublicKeys:RecipientPublicKeys.Values,
   visibleRecipients:boolean
@@ -47,7 +47,7 @@ export const encrypt = (
   return duplexer(chunkStream, encryptStream)
 }
 
-export const decrypt = (
+export const Decrypt = (
   recipientKeyPair: BoxKeyPair.Value
 ) => {
   const stream = new Stream.Transform()

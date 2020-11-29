@@ -21,14 +21,14 @@ Mocha.describe('Encrypt', () => {
       const bytes = Encrypt.CHUNK_BYTES * 3 + 100
       const input = Buffer.alloc(bytes)
 
-      const encryptStream = Encrypt.encrypt(
+      const encryptStream = Encrypt.Encrypt(
         senderKeyPair,
         recipientPublicKeys,
         visibleRecipients
       )
 
       for (const recipient of [bob, carol]) {
-        const decryptStream = Encrypt.decrypt(
+        const decryptStream = Encrypt.Decrypt(
           recipient
         )
         const output = Buffer.alloc(bytes)
@@ -51,7 +51,7 @@ Mocha.describe('Encrypt', () => {
 
       const badRecipient = BoxKeyPair.generate()
       let badAttempted = false
-      const badStream = Encrypt.decrypt(badRecipient)
+      const badStream = Encrypt.Decrypt(badRecipient)
       badStream.on('data', (data:Buffer) => assert.ok(false))
       badStream.on('error', (error:Error) => assert.ok(('' + error).includes('error":"no payload key found for our keypair')))
       encryptStream.on('data', (data:Buffer) => {
