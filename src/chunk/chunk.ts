@@ -11,7 +11,7 @@ export interface Chunk {
  final: boolean
 }
 
-export const chunkStream = (size:number) => {
+export const stream = (size:number) => {
   // Transform stream to implement and return.
   const stream = new Stream.Transform({ objectMode: true })
   // Buffer to put chunks into until we hit `size` bytes.

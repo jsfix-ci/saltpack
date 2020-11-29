@@ -17,12 +17,11 @@ Mocha.describe('Chunk stream', () => {
           { data: Buffer.from([3]), final: true, index: 1 }
         ]]
       ]) {
-        const stream = Chunk.chunkStream(size)
+        const stream = Chunk.stream(size)
         const output:Array<any> = []
         stream.on('data', (data) => output.push(data))
         stream.write(Buffer.from(input))
         stream.end()
-        console.log(output)
         assert.deepEqual(expected, output)
       }
     })

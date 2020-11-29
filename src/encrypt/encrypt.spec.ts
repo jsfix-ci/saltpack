@@ -3,56 +3,78 @@ import * as Encrypt from './encrypt'
 import * as BoxKeyPair from '../ed25519/box_keypair'
 import * as BoxKeyPairFixture from '../ed25519/box_keypair.fixture'
 import * as RecipientPublicKey from '../header/recipient_public_key'
+import * as Fs from 'fs'
 import { strict as assert } from 'assert'
 
 Mocha.describe('Encrypt', () => {
   Mocha.describe('build', () => {
     Mocha.it('should round trip', function () {
-      this.timeout(0)
-
       const senderKeyPair: BoxKeyPair.Value = BoxKeyPairFixture.alice
       const bob: BoxKeyPair.Value = BoxKeyPair.generate()
       const carol: BoxKeyPair.Value = BoxKeyPair.generate()
       const recipientPublicKeys: RecipientPublicKey.Values = [
         bob,
-        carol,
+        carol
       ].map(kp => kp.publicKey)
       const visibleRecipients: boolean = false
 
-      const data = Uint8Array.from(Array(3000100))
+      const bytes = Encrypt.CHUNK_BYTES * 3 + 100
+      const input = Buffer.alloc(bytes)
 
-      const encrypt = new Encrypt.Encrypt(
+      const encryptStream = Encrypt.encrypt(
         senderKeyPair,
         recipientPublicKeys,
-        visibleRecipients,
-        data,
+        visibleRecipients
       )
 
       for (const recipient of [bob, carol]) {
-        const decrypt = new Encrypt.Decrypt(
-          encrypt.wirePackets(),
+        const decryptStream = Encrypt.decrypt(
           recipient
         )
+        const output = Buffer.alloc(bytes)
+        let outputOffset = 0
+        decryptStream.on('data', (data:Buffer) => {
+          data.copy(output, outputOffset)
+          outputOffset += data.length
+          assert.ok(outputOffset <= bytes)
+        })
+        // This should not happen, for debugging the tests only.
+        decryptStream.on('error', (error:Error) => console.warn(recipient.publicKey.toString(), error))
 
-        assert.deepEqual(
-          decrypt.data(),
-          data
-        )
+        encryptStream.on('data', (data:Buffer) => {
+          if (!decryptStream.destroyed) {
+            decryptStream.write(data)
+          }
+        })
+        assert.deepEqual(input, output)
       }
 
-      const sam: BoxKeyPair.Value = BoxKeyPair.generate()
-      try {
-        const decrypt = new Encrypt.Decrypt(
-          encrypt.wirePackets(),
-          sam
-        )
-        // Unreachable!
-        assert.ok(false)
-        // This is just using the value for the linter.
-        assert.ok(decrypt)
-      } catch (e) {
-        assert.ok(('' + e).includes('no payload key found for our keypair'))
-      }
+      const badRecipient = BoxKeyPair.generate()
+      let badAttempted = false
+      const badStream = Encrypt.decrypt(badRecipient)
+      badStream.on('data', (data:Buffer) => assert.ok(false))
+      badStream.on('error', (error:Error) => assert.ok(('' + error).includes('error":"no payload key found for our keypair')))
+      encryptStream.on('data', (data:Buffer) => {
+        if (badAttempted) {
+          assert.ok(badStream.destroyed)
+        }
+        // Decrypt streams are destroyed when there is an error.
+        if (!badStream.destroyed) {
+          badStream.write(data)
+          badAttempted = true
+        }
+      })
+
+      const dataStream = Fs.createReadStream('/dev/urandom', { end: bytes })
+      let inputOffset = 0
+      dataStream.on('data', (data:Buffer) => {
+        data.copy(input, inputOffset)
+        inputOffset += data.length
+        encryptStream.write(data)
+      })
+      // encrypt streams must always end() or they will not flush correctly!
+      dataStream.on('finish', () => encryptStream.end())
+
     })
   })
 })
