@@ -4,74 +4,99 @@ import * as RecipientPublicKeys from '../header/recipient_public_key'
 import * as Mode from '../header/mode'
 import * as PayloadPacket from '../payload/packet'
 import * as FinalFlag from '../payload/final_flag'
+import * as Stream from 'readable-stream'
+import * as Chunk from '../chunk/chunk'
+const duplexer = require('duplexer2')
 
 export const CHUNK_BYTES = 1000000
 
-export type WirePackets = Array<Uint8Array>
-
-export class Encrypt {
-
- private _wirePackets: WirePackets
-
- wirePackets():WirePackets {
-  return this._wirePackets
- }
-
- constructor(
+export const Encrypt = (
   senderKeyPair:BoxKeyPair.Value,
   recipientPublicKeys:RecipientPublicKeys.Values,
-  visibleRecipients:boolean,
-  data:Uint8Array,
- ) {
-  this._wirePackets = []
-
-  let mode: Mode.Value = Mode.Value.Encryption
-
-  let headerPacket = new HeaderPacket.Sender(
-   mode,
-   senderKeyPair,
-   recipientPublicKeys,
-   visibleRecipients,
+  visibleRecipients:boolean
+) => {
+  const chunkStream = Chunk.stream(CHUNK_BYTES)
+  const encryptStream = new Stream.Transform({ objectMode: true })
+  const mode: Mode.Value = Mode.Value.Encryption
+  const headerPacket = new HeaderPacket.Sender(
+    mode,
+    senderKeyPair,
+    recipientPublicKeys,
+    visibleRecipients
   )
 
-  this._wirePackets.push(headerPacket.packetWire())
+  encryptStream._transform = (chunk:Chunk.Chunk, encoding, done) => {
+    // Always start the stream with the headerPacket.
+    if (chunk.index === 0) {
+      encryptStream.push(headerPacket.packetWire())
+    }
 
-  let payloadIndex = 0
-  let numberOfChunks = Math.ceil(data.length / CHUNK_BYTES)
-  for (payloadIndex = 0; payloadIndex < numberOfChunks; payloadIndex++) {
-   let payloadPacket = new PayloadPacket.Sender(
-    payloadIndex,
-    ( payloadIndex + 1 === numberOfChunks) ? FinalFlag.Value.Final : FinalFlag.Value.NotFinal,
-    headerPacket,
-    data.slice(payloadIndex * CHUNK_BYTES, Math.min(data.length, (payloadIndex + 1) * CHUNK_BYTES)),
-   )
-   this._wirePackets.push(payloadPacket.packetWire())
+    // Encrypt each chunk as provided by the chunk stream.
+    encryptStream.push(new PayloadPacket.Sender(
+      chunk.index,
+      chunk.final ? FinalFlag.Value.Final : FinalFlag.Value.NotFinal,
+      headerPacket,
+      chunk.data
+    ).packetWire())
+
+    done()
   }
- }
 
+  chunkStream.pipe(encryptStream)
+
+  return duplexer(chunkStream, encryptStream)
 }
 
-export class Decrypt {
- private _header: HeaderPacket.Receiver
- private _chunks: Array<PayloadPacket.Receiver>
+export const Decrypt = (
+  recipientKeyPair: BoxKeyPair.Value
+) => {
+  const stream = new Stream.Transform()
+  let header: HeaderPacket.Receiver
+  let index = 0
+  let finalised = false
 
- data() {
-  return this._chunks.reduce((acc, item) => Uint8Array.from([...acc, ...item.chunk()]), Uint8Array.from([]))
- }
+  stream._transform = (chunk:Buffer, encoding, done) => {
+    // The first chunk must be the header.
+    // We keep the header in scope rather than forwarding it downstream.
+    if (!header) {
+      try {
+        header = new HeaderPacket.Receiver(recipientKeyPair, chunk)
+        done()
+      } catch (e) {
+        // Bad header immediately destroys the stream.
+        // return here to help typescript understand this is fatal.
+        return stream.destroy(e)
+      }
+    } else {
+      // All other chunks are decrypted at their index using the header.
+      let payloadPacket
+      try {
+        payloadPacket = new PayloadPacket.Receiver(index, header, chunk)
+      } catch (e) {
+        // Bad payload immediately destroys the stream.
+        // return here to help typescript understand this is fatal.
+        return stream.destroy(e)
+      }
+      index++
+      // The stream must end when we receive the finalFlag.
+      // It is an error to receive more data after the finalFlag.
+      if (payloadPacket.finalFlag()) {
+        finalised = true
+        stream.end()
+      }
 
- constructor(
-  wirePackets: WirePackets,
-  recipientKeyPair: BoxKeyPair.Value,
- ) {
-  this._header = new HeaderPacket.Receiver(recipientKeyPair, wirePackets[0])
-  this._chunks = wirePackets.slice(1).map(
-   (chunkPacket, chunkIndex) => new PayloadPacket.Receiver(chunkIndex, this._header, chunkPacket)
-   )
-   if (this._chunks[this._chunks.length - 1].finalFlag() !== FinalFlag.Value.Final) {
-    throw new Error('missing final flag')
-   }
-   if (!this._chunks.slice(0, -1).every(chunk => chunk.finalFlag() === FinalFlag.Value.NotFinal)) {
-    throw new Error('final flag before last chunk')
-   }
- }
+      // We have valid data!
+      done(undefined, payloadPacket.chunk())
+    }
+  }
+
+  stream._flush = (done) => {
+    // The stream must never end before we received the finalFlag.
+    if (!finalised) {
+      return stream.destroy(new Error('decrypt stream ended before finalising data'))
+    }
+    done()
+  }
+
+  return stream
 }

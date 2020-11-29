@@ -1,58 +1,79 @@
+import * as Mocha from 'mocha'
 import * as Encrypt from './encrypt'
 import * as BoxKeyPair from '../ed25519/box_keypair'
 import * as BoxKeyPairFixture from '../ed25519/box_keypair.fixture'
 import * as RecipientPublicKey from '../header/recipient_public_key'
 import { strict as assert } from 'assert'
 
-describe('Encrypt', () => {
- describe('build', () => {
+Mocha.describe('Encrypt', () => {
+  Mocha.describe('build', () => {
+    Mocha.it('should round trip', function () {
+      const senderKeyPair: BoxKeyPair.Value = BoxKeyPairFixture.alice
+      const bob: BoxKeyPair.Value = BoxKeyPair.generate()
+      const carol: BoxKeyPair.Value = BoxKeyPair.generate()
+      const recipientPublicKeys: RecipientPublicKey.Values = [
+        bob,
+        carol
+      ].map(kp => kp.publicKey)
+      const visibleRecipients: boolean = false
 
-  it('should round trip', function () {
+      const bytes = Encrypt.CHUNK_BYTES * 3 + 100
+      const input = Buffer.alloc(bytes)
 
-   this.timeout(0)
+      const encryptStream = Encrypt.Encrypt(
+        senderKeyPair,
+        recipientPublicKeys,
+        visibleRecipients
+      )
 
-   let senderKeyPair: BoxKeyPair.Value = BoxKeyPairFixture.alice
-   let bob: BoxKeyPair.Value = BoxKeyPair.generate()
-   let carol: BoxKeyPair.Value = BoxKeyPair.generate()
-   let recipientPublicKeys: RecipientPublicKey.Values = [
-    bob,
-    carol,
-   ].map(kp => kp.publicKey)
-   let visibleRecipients: boolean = false
+      for (const recipient of [bob, carol]) {
+        const decryptStream = Encrypt.Decrypt(
+          recipient
+        )
+        const output = Buffer.alloc(bytes)
+        let outputOffset = 0
+        decryptStream.on('data', (data:Buffer) => {
+          data.copy(output, outputOffset)
+          outputOffset += data.length
+          assert.ok(outputOffset <= bytes)
+        })
+        // This should not happen, for debugging the tests only.
+        decryptStream.on('error', (error:Error) => console.warn(recipient.publicKey.toString(), error))
 
-   let data = Uint8Array.from(Array(3000100))
+        encryptStream.on('data', (data:Buffer) => {
+          if (!decryptStream.destroyed) {
+            decryptStream.write(data)
+          }
+        })
+        assert.deepEqual(input, output)
+      }
 
-   let encrypt = new Encrypt.Encrypt(
-    senderKeyPair,
-    recipientPublicKeys,
-    visibleRecipients,
-    data,
-   )
+      const badRecipient = BoxKeyPair.generate()
+      let badAttempted = false
+      const badStream = Encrypt.Decrypt(badRecipient)
+      badStream.on('data', (data:Buffer) => assert.ok(false))
+      badStream.on('error', (error:Error) => assert.ok(('' + error).includes('error":"no payload key found for our keypair')))
+      encryptStream.on('data', (data:Buffer) => {
+        if (badAttempted) {
+          assert.ok(badStream.destroyed)
+        }
+        // Decrypt streams are destroyed when there is an error.
+        if (!badStream.destroyed) {
+          badStream.write(data)
+          badAttempted = true
+        }
+      })
 
-   for (let recipient of [bob, carol]) {
-    let decrypt = new Encrypt.Decrypt(
-     encrypt.wirePackets(),
-     recipient,
-    )
+      const dataStream = require('random-bytes-readable-stream')({ size: bytes })
+      let inputOffset = 0
+      dataStream.on('data', (data:Buffer) => {
+        data.copy(input, inputOffset)
+        inputOffset += data.length
+        encryptStream.write(data)
+      })
+      // encrypt streams must always end() or they will not flush correctly!
+      dataStream.on('finish', () => encryptStream.end())
 
-    assert.deepEqual(
-     decrypt.data(),
-     data,
-    )
-   }
-
-   let sam: BoxKeyPair.Value = BoxKeyPair.generate()
-   try {
-    new Encrypt.Decrypt(
-     encrypt.wirePackets(),
-     sam,
-    )
-    assert.ok(false)
-   } catch (e) {
-    assert.ok((''+e).includes('no payload key found for our keypair'))
-   }
-
+    })
   })
-
- })
 })
