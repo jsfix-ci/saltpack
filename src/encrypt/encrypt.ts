@@ -61,13 +61,11 @@ export const Decrypt = (
     if (!header) {
       try {
         header = new HeaderPacket.Receiver(recipientKeyPair, chunk)
-      } catch (e) {
-        // nope
-        stream.destroy(e)
-        // nope
         done()
-        // nope
-        return
+      } catch (e) {
+        // Bad header immediately destroys the stream.
+        // return here to help typescript understand this is fatal.
+        return stream.destroy(e)
       }
     } else {
       // All other chunks are decrypted at their index using the header.
@@ -75,15 +73,10 @@ export const Decrypt = (
       try {
         payloadPacket = new PayloadPacket.Receiver(index, header, chunk)
       } catch (e) {
-        // nope
-        stream.destroy(e)
-        // nope
-        done()
-        // nope
-        return
+        // Bad payload immediately destroys the stream.
+        // return here to help typescript understand this is fatal.
+        return stream.destroy(e)
       }
-      // We have valid data!
-      stream.push(payloadPacket.chunk())
       index++
       // The stream must end when we receive the finalFlag.
       // It is an error to receive more data after the finalFlag.
@@ -91,14 +84,16 @@ export const Decrypt = (
         finalised = true
         stream.end()
       }
+
+      // We have valid data!
+      done(undefined, payloadPacket.chunk())
     }
-    done()
   }
 
   stream._flush = (done) => {
     // The stream must never end before we received the finalFlag.
     if (!finalised) {
-      stream.destroy(new Error('decrypt stream ended before finalising data'))
+      return stream.destroy(new Error('decrypt stream ended before finalising data'))
     }
     done()
   }

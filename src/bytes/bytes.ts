@@ -2,11 +2,16 @@ import * as D from 'io-ts/Decoder'
 import * as E from 'io-ts/Encoder'
 import * as C from 'io-ts/Codec'
 
+// IO for bytes data.
+// Mostly boilerplate wrapping Uint8Array so we can move from any to bytes in a
+// standard way in the io-ts piping.
+
 export type Value = Uint8Array
 export type Encoded = Uint8Array
 
 export const decoder: D.Decoder<unknown, Value> = {
   decode: (a) => {
+    // We want to treat bytes as Uint8Array but we will also accept a Buffer.
     if (a instanceof Uint8Array) {
       return D.success(a)
     }
