@@ -9,18 +9,18 @@ export type Value = unknown
 export type Encoded = Uint8Array
 
 export const decoder: D.Decoder<unknown, Value> = pipe(
- Bytes.decoder,
- D.parse(a => {
-  try {
-   return D.success(decode(a))
-  } catch (e) {
-   return D.failure(a, JSON.stringify(e))
-  }
- })
+  Bytes.decoder,
+  D.parse(a => {
+    try {
+      return D.success(decode(a))
+    } catch (e) {
+      return D.failure(a, JSON.stringify(e))
+    }
+  })
 )
 
 export const encoder: E.Encoder<Encoded, Value> = {
- encode: (v: Value) => encode(v)
+  encode: (v: Value) => encode(v)
 }
 
 export const Codec: C.Codec<unknown, Encoded, Value> = C.make(decoder, encoder)

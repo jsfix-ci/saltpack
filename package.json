@@ -23,8 +23,11 @@
   "homepage": "https://github.com/hummhive/saltpack#readme",
   "dependencies": {
     "@msgpack/msgpack": "^2.3.0",
+    "@types/readable-stream": "^2.3.9",
     "fp-ts": "^2.8.4",
+    "into-stream": "^6.0.0",
     "io-ts": "^2.2.11",
+    "readable-stream": "^3.6.0",
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {

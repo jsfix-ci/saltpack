@@ -1,58 +1,58 @@
+import * as Mocha from 'mocha'
 import * as Encrypt from './encrypt'
 import * as BoxKeyPair from '../ed25519/box_keypair'
 import * as BoxKeyPairFixture from '../ed25519/box_keypair.fixture'
 import * as RecipientPublicKey from '../header/recipient_public_key'
 import { strict as assert } from 'assert'
 
-describe('Encrypt', () => {
- describe('build', () => {
+Mocha.describe('Encrypt', () => {
+  Mocha.describe('build', () => {
+    Mocha.it('should round trip', function () {
+      this.timeout(0)
 
-  it('should round trip', function () {
+      const senderKeyPair: BoxKeyPair.Value = BoxKeyPairFixture.alice
+      const bob: BoxKeyPair.Value = BoxKeyPair.generate()
+      const carol: BoxKeyPair.Value = BoxKeyPair.generate()
+      const recipientPublicKeys: RecipientPublicKey.Values = [
+        bob,
+        carol,
+      ].map(kp => kp.publicKey)
+      const visibleRecipients: boolean = false
 
-   this.timeout(0)
+      const data = Uint8Array.from(Array(3000100))
 
-   let senderKeyPair: BoxKeyPair.Value = BoxKeyPairFixture.alice
-   let bob: BoxKeyPair.Value = BoxKeyPair.generate()
-   let carol: BoxKeyPair.Value = BoxKeyPair.generate()
-   let recipientPublicKeys: RecipientPublicKey.Values = [
-    bob,
-    carol,
-   ].map(kp => kp.publicKey)
-   let visibleRecipients: boolean = false
+      const encrypt = new Encrypt.Encrypt(
+        senderKeyPair,
+        recipientPublicKeys,
+        visibleRecipients,
+        data,
+      )
 
-   let data = Uint8Array.from(Array(3000100))
+      for (const recipient of [bob, carol]) {
+        const decrypt = new Encrypt.Decrypt(
+          encrypt.wirePackets(),
+          recipient
+        )
 
-   let encrypt = new Encrypt.Encrypt(
-    senderKeyPair,
-    recipientPublicKeys,
-    visibleRecipients,
-    data,
-   )
+        assert.deepEqual(
+          decrypt.data(),
+          data
+        )
+      }
 
-   for (let recipient of [bob, carol]) {
-    let decrypt = new Encrypt.Decrypt(
-     encrypt.wirePackets(),
-     recipient,
-    )
-
-    assert.deepEqual(
-     decrypt.data(),
-     data,
-    )
-   }
-
-   let sam: BoxKeyPair.Value = BoxKeyPair.generate()
-   try {
-    new Encrypt.Decrypt(
-     encrypt.wirePackets(),
-     sam,
-    )
-    assert.ok(false)
-   } catch (e) {
-    assert.ok((''+e).includes('no payload key found for our keypair'))
-   }
-
+      const sam: BoxKeyPair.Value = BoxKeyPair.generate()
+      try {
+        const decrypt = new Encrypt.Decrypt(
+          encrypt.wirePackets(),
+          sam
+        )
+        // Unreachable!
+        assert.ok(false)
+        // This is just using the value for the linter.
+        assert.ok(decrypt)
+      } catch (e) {
+        assert.ok(('' + e).includes('no payload key found for our keypair'))
+      }
+    })
   })
-
- })
 })
