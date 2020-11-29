@@ -3,7 +3,6 @@ import * as Encrypt from './encrypt'
 import * as BoxKeyPair from '../ed25519/box_keypair'
 import * as BoxKeyPairFixture from '../ed25519/box_keypair.fixture'
 import * as RecipientPublicKey from '../header/recipient_public_key'
-import * as Fs from 'fs'
 import { strict as assert } from 'assert'
 
 Mocha.describe('Encrypt', () => {
@@ -65,7 +64,7 @@ Mocha.describe('Encrypt', () => {
         }
       })
 
-      const dataStream = Fs.createReadStream('/dev/urandom', { end: bytes })
+      const dataStream = require('random-bytes-readable-stream')({ size: bytes })
       let inputOffset = 0
       dataStream.on('data', (data:Buffer) => {
         data.copy(input, inputOffset)
