@@ -6,6 +6,7 @@ import * as PayloadPacket from '../payload/packet'
 import * as FinalFlag from '../payload/final_flag'
 import * as Stream from 'readable-stream'
 import * as Chunk from '../chunk/chunk'
+import { UnpackrStream } from 'msgpackr';
 const duplexer = require('duplexer2')
 
 export const CHUNK_BYTES = 1000000
@@ -50,12 +51,15 @@ export const Encrypt = (
 export const Decrypt = (
   recipientKeyPair: BoxKeyPair.Value
 ) => {
-  const stream = new Stream.Transform()
+  const unpackStream: any = new UnpackrStream()
+
+  const stream = new Stream.Transform({ objectMode: true })
   let header: HeaderPacket.Receiver
   let index = 0
   let finalised = false
 
-  stream._transform = (chunk:Buffer, encoding, done) => {
+  stream._transform = (chunk:any, encoding, done) => {
+    console.log('chunk', chunk)
     // The first chunk must be the header.
     // We keep the header in scope rather than forwarding it downstream.
     if (!header) {
@@ -98,5 +102,7 @@ export const Decrypt = (
     done()
   }
 
-  return stream
+  unpackStream.pipe(stream)
+
+  return duplexer(unpackStream, stream)
 }
