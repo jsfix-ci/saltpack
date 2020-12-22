@@ -6,9 +6,7 @@ import * as MP from '../messagepack/messagepack'
 import * as HeaderPacket from '../header/packet'
 import * as Chunk from './chunk'
 import * as D from 'io-ts/Decoder'
-import { pipe } from 'fp-ts/lib/pipeable'
 import * as E from 'fp-ts/lib/Either'
-import * as Bytes from '../bytes/bytes'
 
 export class Sender {
  private finalFlag: FinalFlag.Value
@@ -109,13 +107,15 @@ export class Receiver {
        this._header.recipientMac(),
        theList[1][this._header.recipientIndex()]
      )) {
+       console.log(this)
+       console.log('list', theList)
        return D.failure(a, 'failed authenticator check')
      }
 
      const maybeChunk = PayloadSecretBox.open(
        this.payloadIndex(),
        theList[2],
-       this._header.payloadKey(),
+       this._header.payloadKey()
      )
 
      if (maybeChunk === null) {

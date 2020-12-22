@@ -26,78 +26,77 @@ export type Encoded = Array<MacTag.Encoded>
 
 export const decoder: D.Decoder<unknown, Value> = D.array(MacTag.decoder)
 export const encoder: E.Encoder<Encoded, Value> = {
- encode: (v: Value) => v.map(MacTag.Codec.encode)
+  encode: (v: Value) => v.map(MacTag.Codec.encode)
 }
 
 export const Codec: C.Codec<unknown, Encoded, Value> = C.make(decoder, encoder)
 
 const buildHash = (
- headerHash:Sha512.Value,
- payloadIndex:number,
- finalFlag:FinalFlag.Value,
- payloadSecretBox:PayloadSecretBox.Value,
+  headerHash:Sha512.Value,
+  payloadIndex:number,
+  finalFlag:FinalFlag.Value,
+  payloadSecretBox:PayloadSecretBox.Value
 ) => {
- // 1. Concatenate the header hash, the nonce for the payload secretbox, the
- //    final flag byte (0x00 or 0x01), and the payload secretbox itself.
- let bytes = Uint8Array.from([
-  ...headerHash,
-  ...Nonce.indexed(PayloadSecretBox.NONCE_PREFIX, payloadIndex),
-  ...Uint8Array.from([finalFlag]),
-  ...payloadSecretBox,
- ])
+  // 1. Concatenate the header hash, the nonce for the payload secretbox, the
+  //    final flag byte (0x00 or 0x01), and the payload secretbox itself.
+  const bytes = Uint8Array.from([
+    ...headerHash,
+    ...Nonce.indexed(PayloadSecretBox.NONCE_PREFIX, payloadIndex),
+    ...Uint8Array.from([finalFlag]),
+    ...Uint8Array.from(payloadSecretBox)
+  ])
 
- // 2. Compute the crypto_hash (SHA512) of the bytes from #1.
- return NaCl.hash(bytes)
+  // 2. Compute the crypto_hash (SHA512) of the bytes from #1.
+  return NaCl.hash(bytes)
 }
 
 // We compute the authenticators in three steps:
 export const calculate = (
- headerHash:Sha512.Value,
- finalFlag:FinalFlag.Value,
- payloadSecretBox:PayloadSecretBox.Value,
- payloadIndex:number,
- recipientMacKey:Mac.Value,
+  headerHash:Sha512.Value,
+  finalFlag:FinalFlag.Value,
+  payloadSecretBox:PayloadSecretBox.Value,
+  payloadIndex:number,
+  recipientMacKey:Mac.Value
 ):MacTag.Value => {
+  const hash = buildHash(
+    headerHash,
+    payloadIndex,
+    finalFlag,
+    payloadSecretBox
+  )
 
- let hash = buildHash(
-  headerHash,
-  payloadIndex,
-  finalFlag,
-  payloadSecretBox,
- );
-
- // 3. For each recipient, compute the crypto_auth (HMAC-SHA512, truncated to 32
- //    bytes) of the hash from #2, using that recipient's MAC key.
- let hmac = Crypto
-  .createHmac('sha512', recipientMacKey)
-  .update(hash)
-  .digest()
+  // 3. For each recipient, compute the crypto_auth (HMAC-SHA512, truncated to 32
+  //    bytes) of the hash from #2, using that recipient's MAC key.
+  const hmac = Crypto
+    .createHmac('sha512', recipientMacKey)
+    .update(hash)
+    .digest()
 
   return hmac.slice(0, 32)
 }
 
 export const verify = (
- headerHash:Sha512.Value,
- finalFlag:FinalFlag.Value,
- payloadSecretBox:PayloadSecretBox.Value,
- payloadIndex:number,
- recipientMacKey:Mac.Value,
- authenticator: Uint8Array,
+  headerHash:Sha512.Value,
+  finalFlag:FinalFlag.Value,
+  payloadSecretBox:PayloadSecretBox.Value,
+  payloadIndex:number,
+  recipientMacKey:Mac.Value,
+  authenticator: Uint8Array
 ):boolean => {
- // recipients must first verify the authenticator by repeating steps #1 and #2
- // and then calling crypto_auth_verify.
- let hash = buildHash(
-  headerHash,
-  payloadIndex,
-  finalFlag,
-  payloadSecretBox,
- );
+  // recipients must first verify the authenticator by repeating steps #1 and #2
+  // and then calling crypto_auth_verify.
+  const hash = buildHash(
+    headerHash,
+    payloadIndex,
+    finalFlag,
+    payloadSecretBox
+  )
 
- let hmac = Crypto.createHmac('sha512', recipientMacKey)
- hmac.write(hash)
- hmac.end();
- let signature: Uint8Array = hmac.read();
+  const hmac = Crypto.createHmac('sha512', recipientMacKey)
+  hmac.write(hash)
+  hmac.end()
+  const signature: Uint8Array = hmac.read()
 
- // Constant time compare.
- return Crypto.timingSafeEqual(signature.slice(0, 32), authenticator)
+  // Constant time compare.
+  return Crypto.timingSafeEqual(signature.slice(0, 32), authenticator)
 }

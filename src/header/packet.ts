@@ -197,10 +197,7 @@ export class Receiver {
        //    MessagePack.
        //    (What's on the wire is twice-encoded, so the result of unpacking
        //     will be once-encoded bytes.)
-       // E.chain(MP.Codec.decode),
-       // E.chain(Bytes.Codec.decode),
        E.chain(value => {
-
          // 2. Compute the crypto_hash (SHA512) of the bytes from #1 to give the
          // header hash.
          this._headerHash = NaCl.hash(value)
