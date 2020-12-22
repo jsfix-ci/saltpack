@@ -50,9 +50,13 @@ All crypto keys must be 32 byte `Uint8Arrays`.
 Builds a decrypt stream that attempts to decrypt packets produced by an
 `Encrypt` stream.
 
-Expects raw, unarmoured binary (no baseX, etc.).
+Expects _decoded messagepack_ items from the `Encrypt` stream output.
 
-`Decrypt` has only one argument, the 32 byte `Uint8Array` recipient public key.
+Ideally the messagepack decoding would be handled internally to the `Decrypt`
+stream but there is a mismatch between the official messagepack stream handling
+(based on async iterators) and native node streams (e.g. reading a file).
+
+`Decrypt` has only one argument, the recipient public and private key pair.
 
 Any failure to verify, read or decrypt any packet _immediately_ destroys the
 stream, so make sure to implement error handling.
@@ -63,9 +67,23 @@ fatal error for the decrypt stream.
 Example:
 
 ```javascript
+import * as FS from 'fs'
+import * as MP from '@msgpack/msgpack'
+import * as Encrypt from '@hummhive/saltpack'
+
+const readStream = FS.createReadStream('ecrypted-file.txt')
 const decryptStream = Encrypt.Decrypt(
-  recipient
+  recipientKeyPair
 )
+const writeStream = FS.createWriteStream('decrypted-file.txt')
+
+// Normal stream piping.
+decryptStream.pipe(writeStream)
+
+// Async iterator over messagepack items from the encrypted file.
+for await (const item of MP.decodeStream(readStream)) {
+  decryptStream.write(item)
+}
 ```
 
 ## How to release
