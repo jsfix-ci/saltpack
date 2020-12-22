@@ -6,9 +6,7 @@ import * as MP from '../messagepack/messagepack'
 import * as HeaderPacket from '../header/packet'
 import * as Chunk from './chunk'
 import * as D from 'io-ts/Decoder'
-import { pipe } from 'fp-ts/lib/pipeable'
 import * as E from 'fp-ts/lib/Either'
-import * as Bytes from '../bytes/bytes'
 
 export class Sender {
  private finalFlag: FinalFlag.Value
@@ -89,48 +87,44 @@ export class Receiver {
 
  public decoder: D.Decoder<unknown, PacketList.Value> = {
    decode: (a: unknown) => {
-     return pipe(
-       Bytes.Codec.decode(a),
-       E.chain(MP.Codec.decode),
-       E.chain(value => {
-         const maybeTheList = PacketList.Codec.decode(value)
+     const maybeTheList = PacketList.Codec.decode(a)
 
-         if (E.isLeft(maybeTheList)) {
-           return D.failure(value, JSON.stringify(maybeTheList))
-         }
-         const theList: PacketList.Value = maybeTheList.right
+     if (E.isLeft(maybeTheList)) {
+       return D.failure(a, JSON.stringify(maybeTheList))
+     }
+     const theList: PacketList.Value = maybeTheList.right
 
-         // The recipient index of each authenticator in the list corresponds to the
-         // index of that recipient's payload key box in the header. Before opening the
-         // payload secretbox in each payload packet, recipients must first verify the
-         // authenticator by repeating steps #1 and #2 and then calling
-         // crypto_auth_verify.
-         if (!AuthenticatorsList.verify(
-           this._header.headerHash(),
-           theList[0],
-           theList[2],
-           this.payloadIndex(),
-           this._header.recipientMac(),
-           theList[1][this._header.recipientIndex()],
-         )) {
-           return D.failure(value, 'failed authenticator check')
-         }
+     // The recipient index of each authenticator in the list corresponds to the
+     // index of that recipient's payload key box in the header. Before opening the
+     // payload secretbox in each payload packet, recipients must first verify the
+     // authenticator by repeating steps #1 and #2 and then calling
+     // crypto_auth_verify.
+     if (!AuthenticatorsList.verify(
+       this._header.headerHash(),
+       theList[0],
+       theList[2],
+       this.payloadIndex(),
+       this._header.recipientMac(),
+       theList[1][this._header.recipientIndex()]
+     )) {
+       console.log(this)
+       console.log('list', theList)
+       return D.failure(a, 'failed authenticator check')
+     }
 
-         const maybeChunk = PayloadSecretBox.open(
-           this.payloadIndex(),
-           theList[2],
-           this._header.payloadKey(),
-         )
-
-         if (maybeChunk === null) {
-           return D.failure(value, 'failed to decrypt chunk')
-         }
-
-         this._chunk = maybeChunk
-
-         return D.success(theList)
-       })
+     const maybeChunk = PayloadSecretBox.open(
+       this.payloadIndex(),
+       theList[2],
+       this._header.payloadKey()
      )
+
+     if (maybeChunk === null) {
+       return D.failure(a, 'failed to decrypt chunk')
+     }
+
+     this._chunk = maybeChunk
+
+     return D.success(theList)
    }
  }
 }

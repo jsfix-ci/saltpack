@@ -6,7 +6,7 @@ import * as PayloadPacket from '../payload/packet'
 import * as FinalFlag from '../payload/final_flag'
 import * as Stream from 'readable-stream'
 import * as Chunk from '../chunk/chunk'
-const duplexer = require('duplexer2')
+const pumpify = require('pumpify')
 
 export const CHUNK_BYTES = 1000000
 
@@ -42,20 +42,18 @@ export const Encrypt = (
     done()
   }
 
-  chunkStream.pipe(encryptStream)
-
-  return duplexer(chunkStream, encryptStream)
+  return pumpify(chunkStream, encryptStream)
 }
 
 export const Decrypt = (
   recipientKeyPair: BoxKeyPair.Value
 ) => {
-  const stream = new Stream.Transform()
+  const stream = new Stream.Transform({ objectMode: true })
   let header: HeaderPacket.Receiver
   let index = 0
   let finalised = false
 
-  stream._transform = (chunk:Buffer, encoding, done) => {
+  stream._transform = (chunk:any, encoding, done) => {
     // The first chunk must be the header.
     // We keep the header in scope rather than forwarding it downstream.
     if (!header) {
