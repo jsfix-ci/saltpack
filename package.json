@@ -36,6 +36,7 @@
     "pumpify": "^2.0.1",
     "readable-stream": "^3.6.0",
     "stream-to-async-iterator": "^0.2.0",
+    "timing-safe-equal": "^1.0.0",
     "tweetnacl": "^1.0.3",
     "uuid": "^8.3.2"
   },
@@ -44,6 +45,7 @@
     "@rollup/plugin-typescript": "^6.0.0",
     "@tsconfig/recommended": "^1.0.1",
     "@types/mocha": "^8.0.3",
+    "@types/timing-safe-equal": "^1.0.0",
     "@types/tmp": "^0.2.0",
     "@typescript-eslint/eslint-plugin": "^4.4.0",
     "@typescript-eslint/parser": "^4.4.0",

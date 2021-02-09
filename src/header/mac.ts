@@ -87,5 +87,5 @@ export const calculate = (
   ...Uint8Array.from(ephemeralBox.slice(-32)),
  ]))
 
- return hash.slice(0, 32)
+ return Buffer.from(Array.from(hash.slice(0, 32)))
 }
