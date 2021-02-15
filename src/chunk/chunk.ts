@@ -1,5 +1,8 @@
 import * as Stream from 'readable-stream'
 
+// @ts-ignore
+Buffer.prototype._isBuffer = true;
+
 // Nice references for stream implementations:
 // https://codereview.stackexchange.com/questions/57492/chunkertransformstream-a-transform-stream-to-take-arbitrary-chunk-sizes-and-mak
 // https://github.com/Olegas/node-chunking-streams
