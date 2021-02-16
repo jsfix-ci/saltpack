@@ -1,4 +1,5 @@
 import * as Crypto from 'crypto'
+import timingSafeEqual from 'timing-safe-equal'
 import * as MacTag from './mac_tag'
 import * as Sha512 from '../ed25519/sha512'
 import * as FinalFlag from './final_flag'
@@ -98,5 +99,8 @@ export const verify = (
   const signature: Uint8Array = hmac.read()
 
   // Constant time compare.
-  return Crypto.timingSafeEqual(signature.slice(0, 32), authenticator)
+  return timingSafeEqual(
+    Buffer.from(Array.from(signature.slice(0, 32))),
+    Buffer.from(Array.from(authenticator))
+  )
 }
