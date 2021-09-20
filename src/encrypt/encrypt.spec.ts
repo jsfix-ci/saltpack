@@ -15,7 +15,7 @@ const path = Path.join(__dirname, '..', '..', 'fixture', 'Big_Buck_Bunny_1080_10
 Mocha.describe('Encrypt', () => {
   Mocha.describe('build', () => {
     Mocha.it('should round trip', async function () {
-      this.timeout(5000)
+      this.timeout(10000)
 
       for (let senderKeyPair of [BoxKeyPairFixture.alice, null]) {
         const readStream = FS.createReadStream(path)
