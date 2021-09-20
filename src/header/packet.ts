@@ -134,7 +134,6 @@ export class Sender {
      Mac.calculate(
        this._headerHash,
        index,
-       // @todo support anon sending
        senderKeyPair.secretKey,
        recipientPublicKey,
        this.ephemeralKeyPair().secretKey,
