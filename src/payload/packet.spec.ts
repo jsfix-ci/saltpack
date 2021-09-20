@@ -10,7 +10,7 @@ import { strict as assert } from 'assert'
 
 Mocha.describe('Packet', () => {
   Mocha.describe('Sender', () => {
-    Mocha.it.only('should round trip', () => {
+    Mocha.it('should round trip', () => {
       const senderKeyPair: BoxKeyPair.Value = BoxKeyPairFixture.alice
       const bob: BoxKeyPair.Value = BoxKeyPair.generate()
       const carol: BoxKeyPair.Value = BoxKeyPair.generate()

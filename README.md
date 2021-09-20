@@ -31,7 +31,9 @@ the final chunk will never be flushed downstream and the data will be corrupted.
 
 Encrypt builds a stream with three required arguments:
 
-- Sender keypair: The public and private keypair of the encryptor.
+- Sender keypair: The public and private keypair of the encryptor OR `null`.
+                  If `null` the ephemeral keypair will be used allowing Alice
+                  to remain anonymous to Bob.
 - Recipient public keys: An array of all recipients of the encrypted data.
 - Visible recipients: `false` to anonymise recipients (only `false` works atm).
 
