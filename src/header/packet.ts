@@ -60,7 +60,7 @@ export class Sender {
  // When composing a message, the sender follows these steps to generate the header:
  constructor(
    mode: Mode.Value,
-   senderKeyPair: BoxKeyPair.Value,
+   maybeSenderKeyPair: BoxKeyPair.Value | null | undefined,
    recipientPublicKeys: RecipientPublicKey.Values,
    visibleRecipients: boolean,
  ) {
@@ -69,6 +69,14 @@ export class Sender {
 
    // 2. Generate a random ephemeral keypair, using crypto_box_keypair.
    this._ephemeralKeyPair = BoxKeyPair.generate()
+
+   // Encrypting the sender's long-term public key in step #3 allows Alice to
+   // stay anonymous to Mallory. If Alice wants to be anonymous to Bob as well,
+   // she can reuse the ephemeral keypair as her own in steps #3 and #9. When
+   // the ephemeral key and the sender key are the same, clients may indicate
+   // that a message is "intentionally anonymous" as opposed to
+   // "from an unknown sender".
+   const senderKeyPair: BoxKeyPair.Value = maybeSenderKeyPair || this._ephemeralKeyPair;
 
    // 3. Encrypt the sender's long-term public key using crypto_secretbox with
    //    the payload key and the nonce saltpack_sender_key_sbox, to create the
@@ -126,7 +134,6 @@ export class Sender {
      Mac.calculate(
        this._headerHash,
        index,
-       // @todo support anon sending
        senderKeyPair.secretKey,
        recipientPublicKey,
        this.ephemeralKeyPair().secretKey,

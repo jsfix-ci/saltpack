@@ -11,7 +11,7 @@ const pumpify = require('pumpify')
 export const CHUNK_BYTES = 1000000
 
 export const Encrypt = (
-  senderKeyPair:BoxKeyPair.Value,
+  maybeSenderKeyPair:BoxKeyPair.Value | null | undefined,
   recipientPublicKeys:RecipientPublicKeys.Values,
   visibleRecipients:boolean
 ) => {
@@ -20,7 +20,7 @@ export const Encrypt = (
   const mode: Mode.Value = Mode.Value.Encryption
   const headerPacket = new HeaderPacket.Sender(
     mode,
-    senderKeyPair,
+    maybeSenderKeyPair,
     recipientPublicKeys,
     visibleRecipients
   )

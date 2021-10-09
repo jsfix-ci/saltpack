@@ -15,59 +15,60 @@ const path = Path.join(__dirname, '..', '..', 'fixture', 'Big_Buck_Bunny_1080_10
 Mocha.describe('Encrypt', () => {
   Mocha.describe('build', () => {
     Mocha.it('should round trip', async function () {
-      this.timeout(5000)
+      this.timeout(10000)
 
-      const readStream = FS.createReadStream(path)
+      for (let senderKeyPair of [BoxKeyPairFixture.alice, null]) {
+        const readStream = FS.createReadStream(path)
 
-      const senderKeyPair: BoxKeyPair.Value = BoxKeyPairFixture.alice
-      const bob: BoxKeyPair.Value = BoxKeyPair.generate()
-      const carol: BoxKeyPair.Value = BoxKeyPair.generate()
-      const recipientPublicKeys: RecipientPublicKey.Values = [
-        bob,
-        carol
-      ].map(kp => kp.publicKey)
-      const visibleRecipients: boolean = false
+        const bob: BoxKeyPair.Value = BoxKeyPair.generate()
+        const carol: BoxKeyPair.Value = BoxKeyPair.generate()
+        const recipientPublicKeys: RecipientPublicKey.Values = [
+          bob,
+          carol
+        ].map(kp => kp.publicKey)
+        const visibleRecipients: boolean = false
 
-      const encryptStream = Encrypt.Encrypt(
-        senderKeyPair,
-        recipientPublicKeys,
-        visibleRecipients
-      )
+        const encryptStream = Encrypt.Encrypt(
+          senderKeyPair,
+          recipientPublicKeys,
+          visibleRecipients
+        )
 
-      const decryptStreams = [Encrypt.Decrypt(bob), Encrypt.Decrypt(carol)]
+        const decryptStreams = [Encrypt.Decrypt(bob), Encrypt.Decrypt(carol)]
 
-      readStream.pipe(encryptStream)
+        readStream.pipe(encryptStream)
 
-      for (const decryptStream of decryptStreams) {
-        const tmpFile = Tmp.fileSync()
-        const writeStream = FS.createWriteStream(tmpFile.name)
-        writeStream.on('close', async () => {
-          // A correct decryption should allow us to inspect the movie.
-          assert.deepEqual(
-            { ext: 'mp4', mime: 'video/mp4' },
-            await FileType.fromFile(tmpFile.name)
-          )
-        })
-        decryptStream.pipe(writeStream)
-      }
-
-      const badRecipient = BoxKeyPair.generate()
-      const badStream = Encrypt.Decrypt(badRecipient)
-      let badErrored = false
-      badStream.on('error', (error:Error) => {
-        assert.ok(('' + error).includes('error":"no payload key found for our keypair'))
-        badErrored = true
-      })
-
-      for await (const item of MPLib.decodeStream(encryptStream)) {
         for (const decryptStream of decryptStreams) {
-          decryptStream.write(item)
+          const tmpFile = Tmp.fileSync()
+          const writeStream = FS.createWriteStream(tmpFile.name)
+          writeStream.on('close', async () => {
+            // A correct decryption should allow us to inspect the movie.
+            assert.deepEqual(
+              { ext: 'mp4', mime: 'video/mp4' },
+              await FileType.fromFile(tmpFile.name)
+            )
+          })
+          decryptStream.pipe(writeStream)
         }
-        badStream.write(item)
-      }
 
-      assert.ok(badErrored)
-      assert.ok(badStream.destroyed)
+        const badRecipient = BoxKeyPair.generate()
+        const badStream = Encrypt.Decrypt(badRecipient)
+        let badErrored = false
+        badStream.on('error', (error:Error) => {
+          assert.ok(('' + error).includes('error":"no payload key found for our keypair'))
+          badErrored = true
+        })
+
+        for await (const item of MPLib.decodeStream(encryptStream)) {
+          for (const decryptStream of decryptStreams) {
+            decryptStream.write(item)
+          }
+          badStream.write(item)
+        }
+
+        assert.ok(badErrored)
+        assert.ok(badStream.destroyed)
+      }
     })
 
     Mocha.it('should round trip through a file', async function () {
