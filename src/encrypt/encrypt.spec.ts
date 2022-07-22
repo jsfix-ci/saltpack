@@ -45,7 +45,7 @@ Mocha.describe('Encrypt', () => {
             // A correct decryption should allow us to inspect the movie.
             assert.deepEqual(
               { ext: 'mp4', mime: 'video/mp4' },
-              await FileType.fromFile(tmpFile.name)
+              await FileType.fileTypeFromFile(tmpFile.name)
             )
           })
           decryptStream.pipe(writeStream)
@@ -98,7 +98,7 @@ Mocha.describe('Encrypt', () => {
       // Encrypted data cannot be read as media.
       assert.deepEqual(
         undefined,
-        await FileType.fromFile(tmpFile.name)
+        await FileType.fileTypeFromFile(tmpFile.name)
       )
 
       const readStream = FS.createReadStream(tmpFile.name)
@@ -122,7 +122,7 @@ Mocha.describe('Encrypt', () => {
       // A correct decryption should allow us to inspect the movie.
       assert.deepEqual(
         { ext: 'mp4', mime: 'video/mp4' },
-        await FileType.fromFile(outTmpFile.name)
+        await FileType.fileTypeFromFile(outTmpFile.name)
       )
 
     })
